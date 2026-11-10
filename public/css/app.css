@@ -234,6 +234,14 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
 .card-acoes { float: right; display: flex; gap: 4px; }
 .heatmap { border-collapse: collapse; font-size: 11px; }
 .heatmap th, .heatmap td { border: 1px solid var(--c-superficie); padding: 0; height: 22px; min-width: 30px; text-align: center; }
+/* Células do mapa de calor: tom e ícone seguem os tokens do tema (claro/escuro) */
+.heatmap td.hm { --hm: var(--c-texto-2); background: color-mix(in srgb, var(--hm) 22%, var(--c-superficie)); color: var(--hm); font-weight: 600; }
+.heatmap td.hm-ok { --hm: var(--c-sucesso); }
+.heatmap td.hm-erro { --hm: var(--c-erro); }
+.heatmap td.hm-parc { --hm: var(--c-alerta); }
+.heatmap td.hm-f { background: transparent; color: var(--c-texto-2); font-weight: 400; }
+:root[data-tema="escuro"] .heatmap td.hm:not(.hm-f) { background: color-mix(in srgb, var(--hm) 30%, var(--c-superficie)); }
+.hm-ico { width: 11px; height: 11px; vertical-align: -1px; }
 .heatmap th { font-family: var(--f-mono); background: var(--c-superficie-2); position: sticky; top: 0; }
 .heatmap td.nome { text-align: left; padding: 0 6px; white-space: nowrap; position: sticky; left: 0; background: var(--c-superficie); min-width: 180px; }
 .insight { border-left: 3px solid var(--c-borda); padding: var(--e-2) var(--e-3); margin-bottom: var(--e-2); background: var(--c-superficie-2); border-radius: 0 var(--raio) var(--raio) 0; }

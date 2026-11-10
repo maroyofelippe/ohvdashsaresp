@@ -282,7 +282,7 @@ function render() {
           <div class="insight rec"><b>Sugestões</b><ul class="lista-insights">${t.insights.recomendacoes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div></div>`,
           )
           .join('')}</div></div>
-      <div class="card largo"><h2>Mapa de calor — aluno × questão ${exp('mapa')}</h2><p class="card-sub">Mais escuro = mais acerto. F = ausente na disciplina. Passe o mouse para ver os detalhes.</p>${mapaCalor(d)}</div>
+      <div class="card largo"><h2>Mapa de calor — aluno × questão ${exp('mapa')}</h2><p class="card-sub">Verde com ✓ = acerto; vermelho com ✗ = erro; amarelo = crédito parcial (% da questão). F = ausente na disciplina. Passe o mouse para ver os detalhes.</p>${mapaCalor(d)}</div>
     </div>`;
   tabelasOrdenaveis(raiz);
   $$('[data-exp]', raiz).forEach((b) =>
@@ -318,14 +318,22 @@ function cardAluno(d) {
     <div class="gabarito-grade">${a.questoes.map((q) => `<div class="item" style="background:${q.f === null ? 'transparent' : q.f >= 1 ? 'var(--c-sucesso-suave)' : q.f > 0 ? 'var(--c-alerta-suave)' : 'var(--c-erro-suave)'}"><b>${esc(q.codigo)}</b><span class="small">${q.f === null ? 'F' : pct(q.f)}</span></div>`).join('')}</div></div>`;
 }
 
+// Ícones Font Awesome Free 6 (solid: check, xmark) — CC BY 4.0, https://fontawesome.com/license/free
+const FA_CHECK =
+  '<svg class="hm-ico" viewBox="0 0 448 512" aria-hidden="true"><path fill="currentColor" d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>';
+const FA_XMARK =
+  '<svg class="hm-ico" viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg>';
+
 function mapaCalor(d) {
   const m = d.mapaCalor;
-  const azul = escuro ? [57, 135, 229] : [31, 78, 140];
+  // Cores e contraste vêm de classes (.hm-*) que usam os tokens do tema claro/escuro.
   const cel = (v, a, q) => {
-    if (v === null) return `<td title="${esc(`${a.nome} · ${q.codigo}: ausente`)}" class="muted">F</td>`;
-    const alpha = 0.08 + v * 0.82;
-    const claro = v > 0.55;
-    return `<td title="${esc(`${a.nome} · ${q.codigo}: ${pct(v)}`)}" style="background:rgba(${azul.join(',')},${alpha.toFixed(2)});color:${claro ? '#fff' : 'inherit'}">${v >= 1 ? '✓' : v > 0 ? Math.round(v * 100) : ''}</td>`;
+    if (v === null) return `<td class="hm hm-f" title="${esc(`${a.nome} · ${q.codigo}: ausente`)}">F</td>`;
+    if (v >= 1)
+      return `<td class="hm hm-ok" title="${esc(`${a.nome} · ${q.codigo}: acerto`)}">${FA_CHECK}<span class="sr-only">acerto</span></td>`;
+    if (v <= 0)
+      return `<td class="hm hm-erro" title="${esc(`${a.nome} · ${q.codigo}: erro`)}">${FA_XMARK}<span class="sr-only">erro</span></td>`;
+    return `<td class="hm hm-parc" title="${esc(`${a.nome} · ${q.codigo}: ${pct(v)} (parcial)`)}">${Math.round(v * 100)}</td>`;
   };
   return `<div class="tabela-wrap" style="max-height:520px"><table class="heatmap"><thead><tr><th class="nome" style="position:sticky;left:0;z-index:2">Aluno</th>${m.questoes.map((q) => `<th title="${esc(q.codigo)}">${esc(q.codigo.replace(/^[A-Z]+/, ''))}<br><span class="muted">${esc(q.disciplina)}</span></th>`).join('')}<th>%</th></tr></thead><tbody>
     ${m.alunos.map((a) => `<tr><td class="nome">${esc(a.nome)} <span class="muted small">${esc(a.turma.split(' ').pop())}</span></td>${a.valores.map((v, i) => cel(v, a, m.questoes[i])).join('')}<td><b>${pct(a.p)}</b></td></tr>`).join('')}
