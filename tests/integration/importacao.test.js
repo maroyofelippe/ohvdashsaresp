@@ -143,6 +143,13 @@ test('importação do legado (sintético) reproduz KPIs e ranking da PoC', async
   ).body;
   conferir(d, poc.kpis(json));
   expect(d.kpis.semGabarito).toEqual(['MT02']);
+  // dados dos radares (eixo × turma × geral)
+  expect(d.habilidadesPorTurma).toHaveLength(d.turmas.length);
+  for (const t of d.texto) {
+    expect(t.porTurma).toHaveLength(d.turmas.length);
+    for (const pt of t.porTurma)
+      expect(pt.aspectos.map((a) => a.codigo)).toEqual(t.aspectos.map((a) => a.codigo));
+  }
   const dB = (
     await admin
       .get(`/api/painel/dados?avaliacao=${rel.avaliacao.id}&turmas=${b.t['2B'].id}`)

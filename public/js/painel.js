@@ -245,6 +245,13 @@ function render() {
           )
           .join('')}</tbody></table></div></div>
       <div class="card largo"><h2>Desempenho por habilidade ${exp('habilidades')}</h2><p class="card-sub">% de acerto (ponderado pelo peso) nas questões de cada habilidade BNCC, por turma.</p><div class="grafico" style="height:${Math.max(300, d.habilidades.filter((h) => h.n > 0).length * (20 + 8 * d.porTurma.filter((t) => t.avaliados).length))}px"><canvas id="gHab" role="img" aria-label="Desempenho por habilidade"></canvas></div></div>
+      ${discs
+        .filter((di) => radarHabilidades(di.sigla).eixos.length)
+        .map(
+          (di) =>
+            `<div class="card"><h2>Radar de habilidades — ${esc(di.nome)} ${exp('habilidades')}</h2><p class="card-sub">% de acerto em cada habilidade BNCC: cada turma comparada com o geral (todas as turmas do filtro).</p><div class="grafico grafico-radar"><canvas id="gRadHab_${di.sigla}" role="img" aria-label="Radar de habilidades de ${esc(di.nome)}: turmas e geral"></canvas></div></div>`,
+        )
+        .join('')}
       ${d.texto
         .map(
           (
@@ -252,7 +259,8 @@ function render() {
             i,
           ) => `<div class="card"><h2>Produção de texto — ${esc(t.codigo)} ${exp('texto')}</h2><p class="card-sub">Média de ${num(t.mediaPontos)} de ${num(t.max)} pontos (${pct(t.p)}). Aproveitamento por aspecto nos textos em situação que pontua.</p>
         <p>${t.situacoes.map((s) => `<span class="tag ${s.zera_nota ? (s.n ? 'erro' : '') : 'ok'}">${esc(s.codigo)} ${esc(s.nome)}: ${s.n}</span>`).join(' ')}</p>
-        <div class="grafico"><canvas id="gTexto_${i}" role="img" aria-label="Aproveitamento por aspecto"></canvas></div></div>`,
+        <div class="grafico"><canvas id="gTexto_${i}" role="img" aria-label="Aproveitamento por aspecto"></canvas></div></div>
+      <div class="card"><h2>Radar da produção de texto — ${esc(t.codigo)} ${exp('texto')}</h2><p class="card-sub">Aproveitamento por critério: cada turma comparada com o geral.</p><div class="grafico grafico-radar"><canvas id="gRadTexto_${i}" role="img" aria-label="Radar dos critérios de produção de texto: turmas e geral"></canvas></div></div>`,
         )
         .join('')}
       ${
@@ -287,7 +295,8 @@ function render() {
   if (!window.Chart) return;
   discs.forEach((di) => graficoRespostas(di.sigla));
   graficoHabilidades();
-  d.texto.forEach((t, i) => graficoTexto(t, i));
+  discs.forEach((di) => graficoRadarHabilidades(di.sigla));
+  d.texto.forEach((t, i) => (graficoTexto(t, i), graficoRadarTexto(t, i)));
   if (d.escalares.some((e) => e.part)) graficoEscalares();
   graficoComparativo();
 }
@@ -361,13 +370,11 @@ function graficoRespostas(sigla) {
             labels: {
               generateLabels: (c) => [
                 { text: 'Gabarito (acerto)', fillStyle: COR.ok, strokeStyle: COR.ok, lineWidth: 0 },
-                ...Chart.defaults.plugins.legend.labels
-                  .generateLabels(c)
-                  .map((x) => ({
-                    ...x,
-                    fillStyle: COR_LETRA[letras[x.datasetIndex]] || COR.neutro,
-                    strokeStyle: 'transparent',
-                  })),
+                ...Chart.defaults.plugins.legend.labels.generateLabels(c).map((x) => ({
+                  ...x,
+                  fillStyle: COR_LETRA[letras[x.datasetIndex]] || COR.neutro,
+                  strokeStyle: 'transparent',
+                })),
               ],
             },
           },
@@ -425,6 +432,108 @@ function graficoHabilidades() {
       },
     }),
   );
+}
+
+// ---------------- Radares: eixo × turma × geral ----------------
+const p100 = (p) => (p === null || p === undefined ? null : Math.round(p * 1000) / 10);
+const encurtar = (s, n = 22) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
+/** Habilidades de uma disciplina com dados, e as séries (geral + turmas) alinhadas a elas. */
+function radarHabilidades(sigla) {
+  const eixos = dados.habilidades
+    .filter((h) => h.disciplina === sigla && h.p !== null && h.n > 0)
+    .sort((a, b) => a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }));
+  const valor = (lista, cod) => p100(lista.find((y) => y.codigo === cod)?.p);
+  return {
+    eixos,
+    geral: eixos.map((h) => p100(h.p)),
+    turmas: dados.habilidadesPorTurma.map((t) => ({
+      nome: t.turma,
+      dados: eixos.map((h) => valor(t.habilidades, h.codigo)),
+    })),
+  };
+}
+
+/** Radar genérico: série "Geral" tracejada e uma série por turma (cor fixa por turma). */
+function radar(el, { rotulos, titulos, geral, turmas, rodape }) {
+  const hex2rgba = (hex, a) => {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+  };
+  const turmasComDados = turmas.filter((t) => t.dados.some((v) => v !== null));
+  const datasets = [
+    ...turmasComDados.map((t, i) => ({
+      label: t.nome,
+      data: t.dados,
+      borderColor: CAT[i % CAT.length],
+      backgroundColor: hex2rgba(CAT[i % CAT.length], 0.12),
+      pointBackgroundColor: CAT[i % CAT.length],
+      borderWidth: 2,
+      pointRadius: 3,
+    })),
+    {
+      label: 'Geral',
+      data: geral,
+      borderColor: COR.texto,
+      backgroundColor: 'transparent',
+      pointBackgroundColor: COR.texto,
+      borderDash: [6, 4],
+      borderWidth: 2,
+      pointRadius: 3,
+    },
+  ];
+  graficos.push(
+    new Chart(el, {
+      type: 'radar',
+      data: { labels: rotulos, datasets },
+      options: {
+        scales: {
+          r: {
+            min: 0,
+            max: 100,
+            ticks: { stepSize: 25, callback: (v) => `${v}%`, backdropColor: 'transparent' },
+            grid: { color: COR.grade },
+            angleLines: { color: COR.grade },
+            pointLabels: { font: { size: 11 } },
+          },
+        },
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              title: (it) => titulos[it[0].dataIndex],
+              label: (c) => `${c.dataset.label}: ${c.parsed.r === null ? 'sem dados' : `${c.parsed.r}%`}`,
+              footer: (it) => (rodape ? rodape[it[0].dataIndex] : ''),
+            },
+          },
+        },
+      },
+    }),
+  );
+}
+
+function graficoRadarHabilidades(sigla) {
+  const el = document.getElementById(`gRadHab_${sigla}`);
+  if (!el) return;
+  const r = radarHabilidades(sigla);
+  radar(el, {
+    rotulos: r.eixos.map((h) => h.codigo),
+    titulos: r.eixos.map((h) => `${h.codigo} — ${h.descritor || ''}`),
+    rodape: r.eixos.map((h) => `Questões: ${h.questoes.join(', ')}`),
+    geral: r.geral,
+    turmas: r.turmas,
+  });
+}
+
+function graficoRadarTexto(t, i) {
+  const el = document.getElementById(`gRadTexto_${i}`);
+  if (!el) return;
+  radar(el, {
+    rotulos: t.aspectos.map((a) => encurtar(`${a.codigo} ${a.nome}`)),
+    titulos: t.aspectos.map((a) => `${a.codigo} — ${a.nome}`),
+    geral: t.aspectos.map((a) => p100(a.p)),
+    turmas: t.porTurma.map((pt) => ({ nome: pt.turma, dados: pt.aspectos.map((a) => p100(a.p)) })),
+  });
 }
 
 function graficoTexto(t, i) {

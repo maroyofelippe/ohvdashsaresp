@@ -381,6 +381,31 @@ async function computar(av, turmas, f) {
   }));
 
   // ---------- Produção de texto ----------
+  /** Aproveitamento (0–1) por aspecto para um grupo de alunos, só em textos que pontuam. */
+  function aspectosTexto(q, lista) {
+    const acc = q.plain.aspectos.map((a) => ({
+      codigo: a.codigo,
+      nome: a.nome,
+      max: correcao.maxNiveis(a.niveis),
+      niveis: a.niveis,
+      id: a.id,
+      soma: 0,
+      n: 0,
+    }));
+    for (const al of lista.filter((x) => presente(x.id, q.disciplina_id))) {
+      const v = textoPorAluno.get(`${al.id}:${q.id}`);
+      const sit = correcao.pontuarTexto(q, v || {}).situacao;
+      const def = q.situacoes.find((x) => x.codigo === sit);
+      if (!def || def.zera_nota) continue;
+      for (const a of acc) {
+        const n = a.niveis.find((x) => x.codigo === v?.aspectos?.[a.id]);
+        if (!n) continue;
+        a.soma += a.max ? n.pontos / a.max : 0;
+        a.n++;
+      }
+    }
+    return acc.map((a) => ({ codigo: a.codigo, nome: a.nome, p: a.n ? r4(a.soma / a.n) : null, n: a.n }));
+  }
   const texto = ativas
     .filter((q) => q.tipo === 'producao_texto')
     .map((q) => {
@@ -433,6 +458,15 @@ async function computar(av, turmas, f) {
           niveis: a.niveis.map((n) => ({ codigo: n.codigo, pontos: n.pontos, n: a.dist[n.codigo] || 0 })),
           p: a.n ? r4(a.soma / a.n) : null,
           n: a.n,
+        })),
+        // Para o radar "critério × turma × geral"
+        porTurma: turmas.map((t) => ({
+          turma_id: t.id,
+          turma: turmaNome[t.id],
+          aspectos: aspectosTexto(
+            q,
+            alunos.filter((a) => a.turma_id === t.id),
+          ),
         })),
       };
     });
@@ -714,6 +748,14 @@ function tabelaVisao(dados, visao) {
             detalhe: a.niveis.map((n) => `${n.codigo}: ${n.n}`).join(' · '),
             p: pct(a.p),
           })),
+          ...t.porTurma.flatMap((pt) =>
+            pt.aspectos.map((a) => ({
+              q: t.codigo,
+              item: `${pt.turma} · ${a.codigo} – ${a.nome}`,
+              detalhe: `${a.n} texto(s)`,
+              p: pct(a.p),
+            })),
+          ),
         ]),
       };
     case 'escalares':

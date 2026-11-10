@@ -230,6 +230,7 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
 .painel-grid > *, .grid > * { min-width: 0; }
 .grafico { position: relative; height: 300px; }
 .grafico.alto { height: 420px; }
+.grafico.grafico-radar { height: 380px; }
 .card-acoes { float: right; display: flex; gap: 4px; }
 .heatmap { border-collapse: collapse; font-size: 11px; }
 .heatmap th, .heatmap td { border: 1px solid var(--c-superficie); padding: 0; height: 22px; min-width: 30px; text-align: center; }
