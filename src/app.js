@@ -64,8 +64,17 @@ if (!env.isTest) {
   );
 }
 
+// Imagens/fontes/vendor: cache longo. JS e CSS não têm hash no nome, então o navegador precisa
+// revalidar (ETag → 304 barato) a cada uso; senão um deploy novo só chega ao usuário após 7 dias.
 app.use(
-  express.static(path.join(__dirname, '..', 'public'), { maxAge: env.isProd ? '7d' : 0, index: false }),
+  express.static(path.join(__dirname, '..', 'public'), {
+    maxAge: env.isProd ? '7d' : 0,
+    index: false,
+    setHeaders: (res, arquivo) => {
+      if (/\.(js|css)$/i.test(arquivo) && !arquivo.includes(`${path.sep}vendor${path.sep}`))
+        res.setHeader('Cache-Control', 'no-cache');
+    },
+  }),
 );
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.json({ limit: '4mb' }));
