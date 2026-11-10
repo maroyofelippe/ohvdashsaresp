@@ -1,0 +1,30 @@
+<div class="pagina-topo">
+  <div><h1><%= titulo %></h1><p class="sub">Escolha a avaliação, a turma e a disciplina. Digite a letra marcada: o cursor avança sozinho e tudo é salvo automaticamente.</p></div>
+</div>
+<form class="card seletor-lanc" id="seletor" aria-label="Selecionar lançamento">
+  <div class="campo" style="margin:0"><label for="selAvaliacao">Avaliação</label><select id="selAvaliacao" required><option value="">Carregando…</option></select></div>
+  <div class="campo" style="margin:0"><label for="selTurma">Turma</label><select id="selTurma" required disabled><option value="">—</option></select></div>
+  <div class="campo" style="margin:0"><label for="selDisciplina">Disciplina</label><select id="selDisciplina" required disabled><option value="">—</option></select></div>
+  <div class="acoes"><a class="btn" id="lnkGabarito" href="#" hidden>Gabarito</a></div>
+</form>
+<div id="vazio"></div>
+<section id="areaGrade" hidden>
+  <div class="barra-grade">
+    <span id="cadeado" class="tag" hidden><span class="cadeado"><%- icone('lock', 14) %> <span id="cadeadoTexto">Somente leitura</span></span></span>
+    <b id="gradeTitulo"></b>
+    <span class="status-salvo" id="statusSalvo" role="status" aria-live="polite"></span>
+    <button class="btn btn-sm" type="button" id="btnTentar" hidden>Tentar novamente</button>
+    <span style="flex:1"></span>
+    <label class="check small"><input type="checkbox" id="chkAcertos"> Mostrar acertos</label>
+    <button class="btn btn-sm" type="button" id="btnAjuda" aria-haspopup="dialog">Atalhos</button>
+    <button class="btn btn-sm" type="button" id="btnImportar"><%- icone('upload', 14) %> Importar</button>
+    <button class="btn btn-sm" type="button" id="btnModelo"><%- icone('download', 14) %> Modelo</button>
+    <button class="btn btn-sm" type="button" id="btnExportar"><%- icone('download', 14) %> Exportar</button>
+  </div>
+  <div class="grade-wrap" id="gradeWrap">
+    <table class="grade" id="grade" role="grid" aria-label="Grade de lançamento de respostas"></table>
+  </div>
+  <p class="small muted" style="margin-top:8px">Objetivas: A–D · <b>-</b> em branco · <b>X</b> rasura/dupla marcação · Backspace limpa · <b>Enter</b> abre os níveis das questões analíticas · Coluna P/F: <b>P</b> presente, <b>F</b> ausente (ausentes ficam fora das médias).</p>
+</section>
+<div id="popover" class="popover" hidden role="dialog" aria-modal="false"></div>
+<script type="module" src="/js/lancamentos.js"></script>

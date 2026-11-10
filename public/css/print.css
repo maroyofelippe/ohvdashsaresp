@@ -1,0 +1,13 @@
+/* Impressão / PDF pelo navegador */
+@page { size: A4; margin: 12mm; }
+body { background: #fff !important; color: #000 !important; font-size: 11px; }
+.topo, .lateral, .barra-inferior, #toasts, .acoes, .filtros, .card-acoes, .nao-imprimir, .btn, .skip { display: none !important; }
+main { padding: 0 !important; max-width: none !important; }
+.shell { display: block; }
+.card, .kpi { box-shadow: none !important; border-color: #ccc !important; break-inside: avoid; }
+.cabecalho-oficial { display: block !important; text-align: center; margin-bottom: 8mm; border-bottom: 1px solid #999; padding-bottom: 4mm; }
+.cabecalho-oficial img { max-width: 100%; height: auto; max-height: 30mm; }
+.grafico { height: 240px !important; }
+.painel-grid { display: block; }
+.tabela-wrap, .grade-wrap { overflow: visible !important; max-height: none !important; border: 0; }
+a { color: #000; text-decoration: none; }

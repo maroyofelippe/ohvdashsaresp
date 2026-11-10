@@ -1,0 +1,18 @@
+<header class="topo">
+  <button class="btn btn-ghost btn-icone btn-menu" type="button" id="btnMenu" aria-label="Recolher ou expandir menu" aria-controls="menu"><%- icone('menu') %></button>
+  <div class="inst">
+    <div class="l1"><%= escola.governo %> · <%= escola.secretaria %> · <%= escola.diretoria %></div>
+    <div class="l2"><%= escola.escola %> <span class="muted small">· OHVDashSaresp</span></div>
+  </div>
+  <% if (usuario) { %>
+  <div class="usuario-topo">
+    <button class="btn btn-ghost btn-icone btn-tema" type="button" data-tema-alternar aria-label="Alternar tema claro/escuro" title="Alternar tema"><span class="i-lua"><%- icone('moon') %></span><span class="i-sol"><%- icone('sun') %></span></button>
+    <div class="nome"><%= usuario.nome.split(' ')[0] %><small><%= fmt.PERFIS[usuario.perfil] %></small></div>
+    <a class="btn btn-ghost btn-icone" href="/conta/senha" title="Minha conta" aria-label="Minha conta"><%- icone('settings') %></a>
+    <form method="post" action="/auth/refresh/logout" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-ghost btn-icone" type="submit" title="Sair" aria-label="Sair"><%- icone('logout') %></button>
+    </form>
+  </div>
+  <% } %>
+</header>

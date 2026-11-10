@@ -1,0 +1,5 @@
+<div class="vazio">
+  <%- icone(locals.iconeVazio || 'file', 36) %>
+  <p><%= mensagem %></p>
+  <% if (locals.acaoHref) { %><a class="btn btn-primario" href="<%= acaoHref %>"><%= acaoTexto %> <%- icone('arrow', 16) %></a><% } %>
+</div>

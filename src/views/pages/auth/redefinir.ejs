@@ -1,0 +1,11 @@
+<div class="auth-card">
+  <h1>Nova senha</h1>
+  <% if (erros._) { %><div class="alerta erro" role="alert"><%= erros._ %></div><% } %>
+  <form method="post" action="/redefinir-senha" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="token" value="<%= token %>">
+    <%- include('../../partials/campo', { id: 'senha', nome: 'senha', rotulo: 'Nova senha', tipo: 'password', valor: '', ajuda: 'Mínimo 8 caracteres, com letra e número.', attrs: 'autocomplete="new-password" required autofocus' }) %>
+    <%- include('../../partials/campo', { id: 'confirmar_senha', nome: 'confirmar_senha', rotulo: 'Confirmar nova senha', tipo: 'password', valor: '', attrs: 'autocomplete="new-password" required' }) %>
+    <button class="btn btn-primario" type="submit">Salvar nova senha</button>
+  </form>
+</div>

@@ -1,0 +1,13 @@
+<div class="pagina-topo">
+  <div><h1 id="edTitulo"><%= dadosEditor.novo ? 'Nova avaliação' : dadosEditor.avaliacao.titulo %></h1>
+  <p class="sub" id="edSub"><% if (!dadosEditor.novo) { %><%= dadosEditor.avaliacao.serie %> · <%= dadosEditor.avaliacao.ano %> · <span class="tag" id="edStatus"><%= dadosEditor.avaliacao.status %></span><% } else { %>Preencha os dados básicos. Depois você cadastra as questões e o gabarito.<% } %></p></div>
+  <div class="acoes"><a class="btn" href="/avaliacoes">Voltar</a></div>
+</div>
+<nav class="passos" aria-label="Etapas">
+  <button type="button" data-passo="1">Dados</button>
+  <button type="button" data-passo="2" <%= dadosEditor.novo ? 'disabled' : '' %>>Questões</button>
+  <button type="button" data-passo="3" <%= dadosEditor.novo ? 'disabled' : '' %>>Revisar e publicar</button>
+</nav>
+<div id="editor" aria-live="polite"></div>
+<script type="application/json" id="dadosEditor"><%- json(dadosEditor) %></script>
+<script type="module" src="/js/avaliacao-editor.js"></script>

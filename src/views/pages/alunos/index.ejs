@@ -1,0 +1,52 @@
+<% const gerir = pode('alunos:gerenciar') && turmasGerenciaveis.length; %>
+<div class="pagina-topo">
+  <div><h1>Alunos</h1><p class="sub"><%= lista.meta.total %> aluno(s) <%= filtros.turma_id ? 'na turma selecionada' : 'no seu escopo' %></p></div>
+  <% if (gerir) { %><div class="acoes">
+    <button class="btn" id="btnImportar"><%- icone('upload', 16) %> Importar planilha</button>
+    <button class="btn btn-primario" id="btnNovo"><%- icone('plus', 16) %> Novo aluno</button>
+  </div><% } %>
+</div>
+<form class="filtros" method="get" action="/alunos" role="search">
+  <div class="campo"><label for="fTurma">Turma</label>
+    <select id="fTurma" name="turma_id" data-auto-submit>
+      <option value="">Todas</option>
+      <% turmas.forEach(function (t) { %><option value="<%= t.id %>" <%= filtros.turma_id === t.id ? 'selected' : '' %>><%= t.nomeCompleto %></option><% }) %>
+    </select></div>
+  <div class="campo"><label for="fSit">Situação</label>
+    <select id="fSit" name="situacao" data-auto-submit><option value="">Todas</option><% ['ativo','transferido','remanejado'].forEach(function (s) { %><option value="<%= s %>" <%= filtros.situacao === s ? 'selected' : '' %>><%= s[0].toUpperCase() + s.slice(1) %></option><% }) %></select></div>
+  <div class="campo" style="flex-basis:240px"><label for="fBusca">Buscar</label><input type="search" id="fBusca" name="busca" value="<%= filtros.busca %>" placeholder="Nome ou RA"></div>
+  <button class="btn" type="submit"><%- icone('search', 16) %> Buscar</button>
+</form>
+
+<% if (!lista.itens.length) { %>
+  <div class="card"><%- include('../../partials/empty-state', { mensagem: filtros.turma_id ? 'Nenhum aluno nesta turma ainda. Importe a lista de chamada (Nº, Nome, RA).' : 'Nenhum aluno encontrado.', iconeVazio: 'users' }) %></div>
+<% } else { %>
+<div class="tabela-wrap"><table class="tabela cartoes">
+  <thead><tr><th data-ordenar>Nº</th><th data-ordenar>Nome</th><th data-ordenar>Turma</th><th>RA</th><th>Situação</th><th></th></tr></thead>
+  <tbody>
+  <% lista.itens.forEach(function (a) { %>
+    <tr>
+      <td data-rotulo="Nº"><%= a.numero_chamada %></td>
+      <td data-rotulo="Nome"><b><%= a.nome %></b></td>
+      <td data-rotulo="Turma"><%= a.turma %></td>
+      <td data-rotulo="RA" class="mono small"><%= a.ra || '—' %></td>
+      <td data-rotulo="Situação"><span class="tag <%= a.situacao === 'ativo' ? 'ok' : 'aviso' %>"><%= a.situacao %></span></td>
+      <td class="acoes-linha"><% if (a.podeEditar) { %>
+        <button class="btn btn-sm" data-editar-aluno="<%= JSON.stringify(a) %>">Editar</button>
+        <button class="btn btn-sm btn-perigo" data-excluir="/api/alunos/<%= a.id %>" data-confirmar="Excluir <%= a.nome %>? As respostas lançadas deixam de aparecer no painel.">Excluir</button>
+      <% } %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% if (lista.meta.paginas > 1) { %>
+  <nav class="paginacao" aria-label="Paginação">
+    <% const q = (p) => '/alunos?' + new URLSearchParams(Object.assign({}, filtros, { turma_id: filtros.turma_id || '', pagina: p })).toString(); %>
+    <% if (lista.meta.pagina > 1) { %><a class="btn btn-sm" href="<%= q(lista.meta.pagina - 1) %>">Anterior</a><% } %>
+    <span class="small muted">Página <%= lista.meta.pagina %> de <%= lista.meta.paginas %></span>
+    <% if (lista.meta.pagina < lista.meta.paginas) { %><a class="btn btn-sm" href="<%= q(lista.meta.pagina + 1) %>">Próxima</a><% } %>
+  </nav>
+<% } %>
+<% } %>
+<script type="application/json" id="dadosAlunos"><%- json({ turmas: turmasGerenciaveis.map(function (t) { return { id: t.id, nome: t.nomeCompleto }; }), turmaAtual: filtros.turma_id }) %></script>
+<script type="module" src="/js/alunos.js"></script>

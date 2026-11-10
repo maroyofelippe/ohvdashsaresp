@@ -1,0 +1,13 @@
+<nav class="lateral" id="menu" aria-label="Menu principal">
+  <% menu.forEach(function (m) { const atual = m.href === '/' ? caminho === '/' : caminho.startsWith(m.href); %>
+    <a href="<%= m.href %>" <%- atual ? 'aria-current="page"' : '' %> title="<%= m.rotulo %>">
+      <%- icone(m.icone) %><span class="rot"><%= m.rotulo %></span>
+      <% if (m.href === '/admin' && locals.pendentesAprovacao) { %><span class="contador" aria-label="<%= pendentesAprovacao %> pendentes"><%= pendentesAprovacao %></span><% } %>
+    </a>
+  <% }) %>
+</nav>
+<nav class="barra-inferior" aria-label="Menu">
+  <% menu.slice(0, 5).forEach(function (m) { const atual = m.href === '/' ? caminho === '/' : caminho.startsWith(m.href); %>
+    <a href="<%= m.href %>" <%- atual ? 'aria-current="page"' : '' %>><%- icone(m.icone, 20) %><span><%= m.rotulo.replace('Lançar respostas', 'Lançar') %></span></a>
+  <% }) %>
+</nav>

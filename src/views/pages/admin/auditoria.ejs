@@ -1,0 +1,29 @@
+<div class="pagina-topo"><div><h1>Administração</h1><p class="sub">Quem fez o quê e quando — inclusive lançamentos, correções de gabarito e exportações.</p></div></div>
+<%- include('../../partials/admin-abas') %>
+<form class="filtros" method="get" action="/admin/auditoria" role="search">
+  <div class="campo"><label for="aUsuario">Usuário</label><select id="aUsuario" name="usuario_id"><option value="">Todos</option><% usuariosLista.forEach(function (u) { %><option value="<%= u.id %>" <%= String(filtros.usuario_id) === String(u.id) ? 'selected' : '' %>><%= u.nome %></option><% }) %></select></div>
+  <div class="campo"><label for="aAcao">Ação</label><select id="aAcao" name="acao"><option value="">Todas</option><% acoes.forEach(function (a) { %><option value="<%= a %>" <%= filtros.acao === a ? 'selected' : '' %>><%= a %></option><% }) %></select></div>
+  <div class="campo"><label for="aDe">De</label><input type="date" id="aDe" name="de" value="<%= filtros.de || '' %>"></div>
+  <div class="campo"><label for="aAte">Até</label><input type="date" id="aAte" name="ate" value="<%= filtros.ate || '' %>"></div>
+  <button class="btn" type="submit">Filtrar</button>
+</form>
+<% if (!itens.length) { %><div class="card"><%- include('../../partials/empty-state', { mensagem: 'Nenhum registro para este filtro.', iconeVazio: 'shield' }) %></div><% } else { %>
+<div class="tabela-wrap"><table class="tabela cartoes">
+  <thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Registro</th><th>Detalhes</th><th>IP</th></tr></thead>
+  <tbody>
+  <% itens.forEach(function (a) { %>
+    <tr>
+      <td data-rotulo="Quando" class="nowrap small"><%= fmt.dataHora(a.criado_em) %></td>
+      <td data-rotulo="Usuário"><%= a.usuario ? a.usuario.nome : '—' %></td>
+      <td data-rotulo="Ação" class="mono small"><%= a.acao %></td>
+      <td data-rotulo="Registro" class="small"><%= a.entidade || '' %><%= a.entidade_id ? ' #' + a.entidade_id : '' %></td>
+      <td data-rotulo="Detalhes" class="small"><% if (a.antes || a.depois) { %><details><summary>ver</summary><% if (a.antes) { %><div><b>Antes:</b> <code style="white-space:pre-wrap;word-break:break-all"><%= JSON.stringify(a.antes) %></code></div><% } %><% if (a.depois) { %><div><b>Depois:</b> <code style="white-space:pre-wrap;word-break:break-all"><%= JSON.stringify(a.depois) %></code></div><% } %></details><% } %></td>
+      <td data-rotulo="IP" class="small mono"><%= a.ip || '' %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% if (meta.paginas > 1) { const q = function (p) { return '/admin/auditoria?' + new URLSearchParams(Object.assign({}, filtros, { pagina: p })).toString(); }; %>
+<nav class="paginacao" aria-label="Paginação"><% if (meta.pagina > 1) { %><a class="btn btn-sm" href="<%= q(meta.pagina - 1) %>">Anterior</a><% } %><span class="small muted">Página <%= meta.pagina %> de <%= meta.paginas %> · <%= meta.total %> registros</span><% if (meta.pagina < meta.paginas) { %><a class="btn btn-sm" href="<%= q(meta.pagina + 1) %>">Próxima</a><% } %></nav>
+<% } %>
+<% } %>

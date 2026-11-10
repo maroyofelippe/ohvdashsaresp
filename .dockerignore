@@ -1,0 +1,9 @@
+node_modules
+public/vendor
+coverage
+.env
+.git
+*.log
+npm-debug.log*
+docker-compose*.yml
+Dockerfile

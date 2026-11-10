@@ -1,0 +1,7 @@
+node_modules/
+.env
+coverage/
+public/vendor/
+# Dados reais de alunos (LGPD) — não versionar
+seed-data/*.json
+*.log

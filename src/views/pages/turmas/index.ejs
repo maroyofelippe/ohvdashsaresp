@@ -1,0 +1,57 @@
+<% const gerir = pode('estrutura:gerenciar'); %>
+<div class="pagina-topo">
+  <div><h1>Turmas</h1><p class="sub">Anos letivos, séries e turmas da escola.</p></div>
+  <% if (gerir) { %><div class="acoes"><button class="btn btn-primario" data-novo="<%= aba === 'anos' ? 'ano' : aba === 'series' ? 'serie' : 'turma' %>"><%- icone('plus', 16) %> <%= aba === 'anos' ? 'Novo ano letivo' : aba === 'series' ? 'Nova série' : 'Nova turma' %></button></div><% } %>
+</div>
+<nav class="abas" aria-label="Seções">
+  <a href="/turmas?aba=turmas" <%- aba === 'turmas' ? 'aria-current="page"' : '' %>>Turmas</a>
+  <a href="/turmas?aba=anos" <%- aba === 'anos' ? 'aria-current="page"' : '' %>>Anos letivos</a>
+  <a href="/turmas?aba=series" <%- aba === 'series' ? 'aria-current="page"' : '' %>>Séries</a>
+</nav>
+
+<% if (aba === 'turmas') { %>
+  <% if (!turmas.length) { %>
+    <div class="card"><%- include('../../partials/empty-state', { mensagem: 'Nenhuma turma cadastrada. Cadastre o ano letivo e as séries e depois crie as turmas.', iconeVazio: 'grid' }) %></div>
+  <% } else { %>
+  <div class="tabela-wrap"><table class="tabela cartoes">
+    <thead><tr><th data-ordenar>Turma</th><th data-ordenar>Ano letivo</th><th>Período</th><th data-ordenar>Alunos</th><th>Professores</th><% if (gerir) { %><th></th><% } %></tr></thead>
+    <tbody>
+    <% turmas.forEach(function (t) { %>
+      <tr>
+        <td data-rotulo="Turma"><b><%= t.nome %></b></td>
+        <td data-rotulo="Ano"><%= t.ano %> <% if (!t.anoAtivo) { %><span class="tag">inativo</span><% } %></td>
+        <td data-rotulo="Período"><%= { manha: 'Manhã', tarde: 'Tarde', integral: 'Integral' }[t.periodo] %></td>
+        <td data-rotulo="Alunos"><a href="/alunos?turma_id=<%= t.id %>"><%= t.alunos %></a></td>
+        <td data-rotulo="Professores" class="small"><%= t.professores.join(', ') || '—' %></td>
+        <% if (gerir) { %><td class="acoes-linha">
+          <button class="btn btn-sm" data-editar="turma" data-registro="<%= JSON.stringify({ id: t.id, ano_letivo_id: t.ano_letivo_id, serie_id: t.serie_id, letra: t.letra, periodo: t.periodo }) %>">Editar</button>
+          <button class="btn btn-sm btn-perigo" data-excluir="/api/estrutura/turmas/<%= t.id %>" data-confirmar="Excluir a turma <%= t.nome %>?">Excluir</button>
+        </td><% } %>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+<% } else if (aba === 'anos') { %>
+  <div class="tabela-wrap"><table class="tabela cartoes">
+    <thead><tr><th>Ano</th><th>Situação</th><% if (gerir) { %><th></th><% } %></tr></thead>
+    <tbody>
+    <% anos.forEach(function (a) { %>
+      <tr><td data-rotulo="Ano"><b><%= a.ano %></b></td><td data-rotulo="Situação"><span class="tag <%= a.ativo ? 'ok' : '' %>"><%= a.ativo ? 'Ativo' : 'Inativo' %></span></td>
+      <% if (gerir) { %><td class="acoes-linha"><button class="btn btn-sm" data-editar="ano" data-registro="<%= JSON.stringify({ id: a.id, ano: a.ano, ativo: a.ativo }) %>">Editar</button> <button class="btn btn-sm btn-perigo" data-excluir="/api/estrutura/anos/<%= a.id %>" data-confirmar="Excluir o ano letivo <%= a.ano %>?">Excluir</button></td><% } %></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+<% } else { %>
+  <div class="tabela-wrap"><table class="tabela cartoes">
+    <thead><tr><th>Série</th><th>Etapa</th><th>Ordem</th><% if (gerir) { %><th></th><% } %></tr></thead>
+    <tbody>
+    <% series.forEach(function (s) { %>
+      <tr><td data-rotulo="Série"><b><%= s.nome %></b></td><td data-rotulo="Etapa"><%= s.etapa %></td><td data-rotulo="Ordem"><%= s.ordem %></td>
+      <% if (gerir) { %><td class="acoes-linha"><button class="btn btn-sm" data-editar="serie" data-registro="<%= JSON.stringify({ id: s.id, nome: s.nome, etapa: s.etapa, ordem: s.ordem }) %>">Editar</button> <button class="btn btn-sm btn-perigo" data-excluir="/api/estrutura/series/<%= s.id %>" data-confirmar="Excluir a série <%= s.nome %>?">Excluir</button></td><% } %></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+<% } %>
+<script type="application/json" id="dadosTurmas"><%- json({ anos: anos.map(function (a) { return { id: a.id, ano: a.ano }; }), series: series.map(function (s) { return { id: s.id, nome: s.nome }; }) }) %></script>
+<script type="module" src="/js/turmas.js"></script>

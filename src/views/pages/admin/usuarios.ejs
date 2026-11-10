@@ -1,0 +1,37 @@
+<div class="pagina-topo"><div><h1>Administração</h1><p class="sub"><%= aprovacoes ? 'Contas que confirmaram o e-mail e aguardam aprovação de perfil e turmas.' : 'Usuários, perfis e vínculos professor ↔ turma.' %></p></div></div>
+<%- include('../../partials/admin-abas') %>
+<% if (!aprovacoes) { %>
+<form class="filtros" method="get" action="/admin" role="search">
+  <div class="campo"><label for="fStatus">Status</label><select id="fStatus" name="status" data-auto-submit><option value="">Todos</option><% Object.entries(fmt.STATUS_USUARIO).forEach(function ([k, v]) { %><option value="<%= k %>" <%= filtros.status === k ? 'selected' : '' %>><%= v %></option><% }) %></select></div>
+  <div class="campo"><label for="fPerfil">Perfil</label><select id="fPerfil" name="perfil" data-auto-submit><option value="">Todos</option><% Object.entries(fmt.PERFIS).forEach(function ([k, v]) { %><option value="<%= k %>" <%= filtros.perfil === k ? 'selected' : '' %>><%= v %></option><% }) %></select></div>
+  <div class="campo" style="flex-basis:240px"><label for="fBusca">Buscar</label><input type="search" id="fBusca" name="busca" value="<%= filtros.busca %>" placeholder="Nome ou e-mail"></div>
+  <button class="btn" type="submit"><%- icone('search', 16) %> Buscar</button>
+</form>
+<% } %>
+<% if (!lista.itens.length) { %>
+  <div class="card"><%- include('../../partials/empty-state', { mensagem: aprovacoes ? 'Nenhuma conta aguardando aprovação.' : 'Nenhum usuário encontrado.', iconeVazio: 'users' }) %></div>
+<% } else { %>
+<div class="tabela-wrap"><table class="tabela cartoes">
+  <thead><tr><th data-ordenar>Nome</th><th data-ordenar>Perfil</th><th>Status</th><th>Turmas</th><th data-ordenar>Último acesso</th><th></th></tr></thead>
+  <tbody>
+  <% lista.itens.forEach(function (u) { %>
+    <tr>
+      <td data-rotulo="Nome"><b><%= u.nome %></b><% if (u.nativo) { %> <span class="tag info">nativo</span><% } %><br><span class="small muted"><%= u.email %></span></td>
+      <td data-rotulo="Perfil"><%= fmt.PERFIS[u.perfil] %></td>
+      <td data-rotulo="Status"><span class="tag <%= u.status === 'ativo' ? 'ok' : u.status === 'inativo' ? '' : 'aviso' %>"><%= fmt.STATUS_USUARIO[u.status] %></span></td>
+      <td data-rotulo="Turmas" class="small"><%= u.vinculos.map(function (v) { return v.nome + (v.status === 'pendente' ? ' (pendente)' : ''); }).join(', ') || '—' %></td>
+      <td data-rotulo="Último acesso" class="small"><%= u.ultimo_login ? fmt.dataHora(u.ultimo_login) : '—' %></td>
+      <td class="acoes-linha">
+        <% if (u.status === 'pendente') { %><button class="btn btn-sm btn-primario" data-aprovar="<%= u.id %>">Aprovar</button><% } %>
+        <% if (u.status === 'pendente_email') { %><button class="btn btn-sm btn-primario" data-link-confirmacao="<%= u.id %>" data-nome="<%= u.nome %>">Link de confirmação</button><% } %>
+        <button class="btn btn-sm" data-editar-usuario="<%= JSON.stringify({ id: u.id, nome: u.nome, perfil: u.perfil, status: u.status, nativo: u.nativo, turmas: u.vinculos.map(function (v) { return v.turma_id; }) }) %>">Editar</button>
+        <% if (!u.nativo) { %><button class="btn btn-sm" data-senha="<%= u.id %>" data-nome="<%= u.nome %>">Redefinir senha</button>
+        <button class="btn btn-sm btn-perigo" data-excluir="/api/admin/usuarios/<%= u.id %>" data-confirmar="Excluir a conta de <%= u.nome %>? O histórico na auditoria é mantido.">Excluir</button><% } %>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% } %>
+<script type="application/json" id="dadosAdmin"><%- json({ turmas: turmas.map(function (t) { return { id: t.id, nome: t.nomeCompleto }; }) }) %></script>
+<script type="module" src="/js/admin.js"></script>

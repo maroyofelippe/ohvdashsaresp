@@ -1,0 +1,10 @@
+<div class="auth-card">
+  <h1>Recuperar senha</h1>
+  <p class="muted">Informe seu e-mail. Se houver uma conta, enviaremos um link válido por 1 hora.</p>
+  <form method="post" action="/esqueci-senha" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <%- include('../../partials/campo', { id: 'email', nome: 'email', rotulo: 'E-mail institucional', tipo: 'email', valor: valores.email, attrs: 'required autofocus inputmode="email"' }) %>
+    <button class="btn btn-primario" type="submit">Enviar link</button>
+  </form>
+  <div class="auth-links"><a href="/login">Voltar ao login</a></div>
+</div>

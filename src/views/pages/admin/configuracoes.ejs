@@ -1,0 +1,10 @@
+<div class="pagina-topo"><div><h1>Administração</h1><p class="sub">Dados exibidos no cabeçalho do sistema, nas impressões e nas exportações.</p></div></div>
+<%- include('../../partials/admin-abas') %>
+<form class="card" id="formConfig" style="max-width:760px" novalidate>
+  <% [['governo','Governo'],['secretaria','Secretaria'],['diretoria','Diretoria / Unidade Regional de Ensino'],['escola','Nome da escola'],['municipio','Município'],['codigo_cie','Código CIE'],['endereco','Endereço'],['telefone','Telefone'],['email','E-mail da escola'],['logotipo','Imagem do cabeçalho oficial (caminho em /img/ ou data URI)']].forEach(function ([k, r]) { %>
+    <div class="campo"><label for="cfg_<%= k %>"><%= r %></label><input id="cfg_<%= k %>" name="<%= k %>" value="<%= cfg[k] %>"></div>
+  <% }) %>
+  <div class="campo"><span class="rotulo">Pré-visualização do cabeçalho impresso</span><img src="<%= cfg.logotipo || '/img/cabecalho.png' %>" alt="Cabeçalho institucional" style="max-width:100%;border:1px solid var(--c-borda);border-radius:8px;background:#fff"></div>
+  <div class="acoes"><button class="btn btn-primario" type="submit">Salvar</button></div>
+</form>
+<script type="module" src="/js/admin.js"></script>

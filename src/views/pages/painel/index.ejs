@@ -1,0 +1,14 @@
+<div class="pagina-topo">
+  <div><h1>Painel</h1><p class="sub" id="painelSub">Resultados por avaliação, turma, aluno e disciplina. O endereço da página guarda o filtro — copie para compartilhar.</p></div>
+  <div class="acoes">
+    <button class="btn" type="button" id="btnExportarTudo"><%- icone('download', 16) %> Exportar tudo (xlsx)</button>
+    <button class="btn" type="button" data-imprimir><%- icone('print', 16) %> Imprimir / PDF</button>
+  </div>
+</div>
+<%- include('../../partials/filtros') %>
+<div id="painel" aria-live="polite" aria-busy="true">
+  <div class="kpis"><% for (let i = 0; i < 5; i++) { %><div class="kpi"><div class="skeleton" style="min-height:60px"></div></div><% } %></div>
+  <div class="painel-grid"><div class="card"><div class="skeleton"></div></div><div class="card"><div class="skeleton"></div></div></div>
+</div>
+<script src="/vendor/chart.umd.js"></script>
+<script type="module" src="/js/painel.js"></script>

@@ -1,0 +1,70 @@
+<%
+  const av = avaliacao;
+  const pais = new Set(questoes.filter(function (q) { return q.questao_pai_id; }).map(function (q) { return q.questao_pai_id; }));
+  const folhas = questoes.filter(function (q) { return !pais.has(q.id); });
+  const porId = {}; questoes.forEach(function (q) { porId[q.id] = q; });
+  const creditos = { integral: 'Integral', parcial: 'Parcial', nenhum: 'Nenhum' };
+  const n = function (v) { return Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 2 }); };
+%>
+<div class="pagina-topo">
+  <div><h1><%= av.titulo %> — <%= av.serie %> — <%= av.ano %></h1>
+  <p class="sub">Gabarito e critérios de correção · <span class="tag <%= av.status === 'publicada' ? 'ok' : '' %>"><%= av.status %></span> · elaborado por <%= av.autor %></p></div>
+  <div class="acoes">
+    <% if (!imprimir) { %>
+      <a class="btn" href="/avaliacoes/<%= av.id %>/imprimir?auto=1" target="_blank" rel="noopener"><%- icone('print', 16) %> Imprimir / PDF</a>
+      <% if (pode('exportar')) { %><button class="btn" type="button" data-baixar="/api/avaliacoes/<%= av.id %>/gabarito"><%- icone('download', 16) %> Exportar xlsx</button><% } %>
+      <% if (permissoes.podeCorrigirGabarito) { %><a class="btn" href="/avaliacoes/<%= av.id %>/editar">Editar</a><% } %>
+      <% if (permissoes.podeLancar) { %><a class="btn btn-primario" href="/lancamentos?avaliacao=<%= av.id %>">Usar esta avaliação</a><% } %>
+    <% } else { %>
+      <button class="btn" data-imprimir><%- icone('print', 16) %> Imprimir</button>
+    <% } %>
+  </div>
+</div>
+
+<% av.disciplinas.forEach(function (d) {
+  const qs = folhas.filter(function (q) { return q.disciplina_id === d.disciplina_id; });
+  const objetivas = qs.filter(function (q) { return q.tipo === 'objetiva'; });
+  const analiticas = qs.filter(function (q) { return q.tipo !== 'objetiva'; });
+  const total = qs.filter(function (q) { return !q.anulada; }).reduce(function (s, q) { return s + q.peso; }, 0);
+%>
+<section class="card">
+  <h2><%= d.nome %> <span class="muted small"><%= d.data_aplicacao ? 'Aplicação: ' + fmt.data(d.data_aplicacao) : '' %> · <%= qs.length %> itens · <%= n(total) %> pontos</span></h2>
+  <% if (!qs.length) { %><p class="muted">Sem questões cadastradas.</p><% } %>
+  <% if (objetivas.length) { %>
+  <h3>Questões objetivas</h3>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Questão</th><th>Gabarito</th><th>Peso</th><th>Habilidade</th><th>Descritor</th></tr></thead>
+    <tbody>
+    <% objetivas.forEach(function (q) { %>
+      <tr>
+        <td class="mono"><b><%= q.codigo %></b><% if (q.questao_pai_id && porId[q.questao_pai_id]) { %> <span class="small muted">(subitem de <%= porId[q.questao_pai_id].codigo %>)</span><% } %></td>
+        <td><% if (q.anulada) { %><span class="tag aviso">Anulada</span><% } else { %><b style="font-size:16px"><%= q.gabarito || '—' %></b><% } %></td>
+        <td><%= n(q.peso) %></td>
+        <td class="mono small"><%= q.habilidade_bncc || '—' %></td>
+        <td class="small"><%= q.descritor %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+  <% analiticas.forEach(function (q) { %>
+    <h3 style="margin-top:20px"><%= q.codigo %> — <%= q.tipo === 'escalar' ? 'Questão escalar (dissertativa)' : 'Produção de texto' %>
+      <span class="muted small"><%= q.item_codigo ? 'Item ' + q.item_codigo + ' · ' : '' %><%= q.habilidade_bncc %> · peso <%= n(q.peso) %></span></h3>
+    <% if (q.descritor) { %><p class="small"><b>Descritor:</b> <%= q.descritor %></p><% } %>
+    <% if (q.enunciado_resumo) { %><p class="small muted"><%= q.enunciado_resumo %></p><% } %>
+    <% if (q.tipo === 'escalar') { const mx = Math.max.apply(null, q.niveis.map(function (x) { return x.pontos; }).concat([0])); %>
+      <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Nível</th><th>Código</th><th>Crédito</th><th>Pontos</th><th>Critério</th></tr></thead><tbody>
+      <% q.niveis.forEach(function (x) { %><tr><td><b><%= x.codigo %></b></td><td class="mono"><%= x.codigo_alt || '' %></td><td><span class="tag <%= x.credito === 'integral' ? 'ok' : x.credito === 'parcial' ? 'aviso' : 'erro' %>"><%= creditos[x.credito] || '—' %></span></td><td><%= n(x.pontos) %> <span class="muted small">(<%= mx ? Math.round(x.pontos / mx * 100) : 0 %>%)</span></td><td class="small"><%= x.descricao %></td></tr><% }) %>
+      </tbody></table></div>
+    <% } else { const mx = q.aspectos.reduce(function (s, a) { return s + Math.max.apply(null, a.niveis.map(function (x) { return x.pontos; }).concat([0])); }, 0); %>
+      <p class="small"><b>1º</b> indique a situação de correção; <b>2º</b> nos textos em situação que pontua, atribua um nível a cada aspecto. Nota = pontos ÷ <%= n(mx) %> × peso.</p>
+      <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Situação</th><th>Nome</th><th>Efeito</th><th>Descrição</th></tr></thead><tbody>
+      <% q.situacoes.forEach(function (s) { %><tr><td><b><%= s.codigo %></b></td><td><%= s.nome %></td><td><span class="tag <%= s.zera_nota ? 'erro' : 'ok' %>"><%= s.zera_nota ? 'Questão = 0' : 'Corrigir aspectos' %></span></td><td class="small"><%= s.descricao %></td></tr><% }) %>
+      </tbody></table></div>
+      <div class="tabela-wrap" style="margin-top:12px"><table class="tabela"><thead><tr><th>Aspecto</th><th>Níveis (pontos) e critérios</th></tr></thead><tbody>
+      <% q.aspectos.forEach(function (a) { %><tr><td style="min-width:160px"><b><%= a.codigo %> – <%= a.nome %></b><br><span class="small muted"><%= a.descricao %></span></td><td class="small"><% a.niveis.forEach(function (x) { %><div><b><%= x.codigo %></b> (<%= n(x.pontos) %>) – <%= x.descricao %></div><% }) %></td></tr><% }) %>
+      </tbody><tfoot><tr><td><b>Total</b></td><td><b><%= n(mx) %> pontos</b></td></tr></tfoot></table></div>
+    <% } %>
+  <% }) %>
+</section>
+<% }) %>

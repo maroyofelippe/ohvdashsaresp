@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= titulo %> · OHVDashSaresp</title>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/print.css">
+</head>
+<body>
+  <main style="max-width:960px;margin:0 auto;padding:16px">
+    <div class="cabecalho-oficial" style="display:block"><img src="<%= escola.logotipo || '/img/cabecalho.png' %>" alt="Cabeçalho institucional"></div>
+    <%- body %>
+  </main>
+  <script type="module" src="/js/imprimir.js"></script>
+</body>
+</html>

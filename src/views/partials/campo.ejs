@@ -1,0 +1,6 @@
+<div class="campo">
+  <label for="<%= id %>"><%= rotulo %></label>
+  <input id="<%= id %>" name="<%= nome %>" type="<%= locals.tipo || 'text' %>" value="<%= locals.valor || '' %>" <%- locals.attrs || '' %> <% if (erros && erros[nome]) { %>aria-invalid="true" aria-describedby="<%= id %>-erro"<% } %>>
+  <% if (locals.ajuda) { %><span class="ajuda"><%= ajuda %></span><% } %>
+  <% if (erros && erros[nome]) { %><span class="erro" id="<%= id %>-erro"><%= erros[nome] %></span><% } %>
+</div>

@@ -1,0 +1,72 @@
+# OHVDashSaresp — ambiente completo em Docker: PostgreSQL 18, aplicação e Adminer.
+#
+#   docker compose up -d --build        →  http://localhost:3000  (Adminer: http://localhost:8080)
+#
+# O banco do Docker é separado do banco da hospedagem: as variáveis DOCKER_DB_* (opcionais, no .env)
+# sobrescrevem DB_HOST/DB_NAME/DB_USER/DB_PASSWORD SOMENTE dentro dos contêineres.
+# A porta do PostgreSQL no computador é 5433 para não conflitar com um PostgreSQL local na 5432.
+
+name: ohvdashsaresp
+
+services:
+  db:
+    image: postgres:18
+    container_name: ohv-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DOCKER_DB_USER:-ohv}
+      POSTGRES_PASSWORD: ${DOCKER_DB_PASSWORD:-ohv_dev_pass}
+      POSTGRES_DB: ${DOCKER_DB_NAME:-OHVDashSaresp}
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+    ports:
+      - "${DOCKER_DB_PORT:-5433}:5432"
+    volumes:
+      # PostgreSQL 18+: o volume fica em /var/lib/postgresql (o PGDATA é uma subpasta versionada)
+      - pg_data:/var/lib/postgresql
+      - ./scripts/pg-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  app:
+    build: .
+    image: ohvdashsaresp-app
+    container_name: ohv-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DOCKER_DB_NAME:-OHVDashSaresp}
+      DB_NAME_TEST: OHVDashSaresp_test
+      DB_USER: ${DOCKER_DB_USER:-ohv}
+      DB_PASSWORD: ${DOCKER_DB_PASSWORD:-ohv_dev_pass}
+      PORT: 3000
+      APP_URL: ${DOCKER_APP_URL:-http://localhost:3000}
+    ports:
+      - "${DOCKER_APP_PORT:-3000}:3000"
+    volumes:
+      # Coloque o backup da PoC em seed-data/ para o seeder carregar gabaritos/habilidades
+      - ./seed-data:/app/seed-data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  adminer:
+    image: adminer:4
+    container_name: ohv-adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "${DOCKER_ADMINER_PORT:-8080}:8080"
+    depends_on:
+      - db
+
+volumes:
+  pg_data:

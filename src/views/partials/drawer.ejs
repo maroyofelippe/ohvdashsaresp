@@ -1,0 +1,10 @@
+<div class="drawer-fundo" id="drawerFundo" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitulo" hidden>
+  <header><h2 id="drawerTitulo">Editar</h2><button class="btn btn-ghost btn-icone" type="button" data-fechar-drawer aria-label="Fechar"><%- icone('x') %></button></header>
+  <form id="drawerForm" novalidate>
+    <div class="drawer-corpo" id="drawerCorpo"></div>
+  </form>
+  <footer><button class="btn" type="button" data-fechar-drawer>Cancelar</button><button class="btn btn-primario" type="submit" form="drawerForm" id="drawerSalvar">Salvar</button></footer>
+</aside>
+<div class="modal-fundo" id="modalFundo" hidden></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo" hidden></div>

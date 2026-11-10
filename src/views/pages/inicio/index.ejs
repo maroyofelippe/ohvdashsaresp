@@ -1,0 +1,76 @@
+<div class="pagina-topo">
+  <div>
+    <h1>Olá, <%= usuario.nome.split(' ')[0] %></h1>
+    <p class="sub"><%= fmt.PERFIS[usuario.perfil] %> · <%= escola.escola %></p>
+  </div>
+</div>
+
+<% if (usuario.perfil === 'professor') { %>
+  <div class="card" id="continuar" hidden>
+    <h2>Continuar lançamento</h2>
+    <p class="muted" id="continuarTexto"></p>
+    <a class="btn btn-primario" id="continuarLink" href="/lancamentos"><%- icone('edit', 16) %> Continuar</a>
+  </div>
+  <% if (semTurmas) { %>
+    <div class="card"><%- include('../../partials/empty-state', { mensagem: 'Você ainda não tem turmas vinculadas aprovadas. Procure a administração.', iconeVazio: 'users' }) %></div>
+  <% } else if (!progresso.length) { %>
+    <div class="card"><%- include('../../partials/empty-state', { mensagem: 'Nenhuma avaliação publicada para as suas turmas.', acaoHref: '/avaliacoes/nova', acaoTexto: 'Criar avaliação', iconeVazio: 'clipboard' }) %></div>
+  <% } else { %>
+    <div class="card">
+      <h2>Progresso de lançamento</h2>
+      <div class="tabela-wrap">
+        <table class="tabela cartoes">
+          <thead><tr><th>Turma</th><th>Avaliação</th><th style="width:40%">Lançamentos (alunos × disciplinas)</th><th></th></tr></thead>
+          <tbody>
+          <% progresso.forEach(function (p) { %>
+            <tr>
+              <td data-rotulo="Turma"><b><%= p.turma %></b></td>
+              <td data-rotulo="Avaliação"><%= p.avaliacao %></td>
+              <td data-rotulo="Progresso"><div class="barra-prog" role="progressbar" aria-valuenow="<%= Math.round(p.frac*100) %>" aria-valuemin="0" aria-valuemax="100"><span style="width:<%= Math.round(p.frac*100) %>%"></span></div><span class="small muted"><%= p.lancados %> de <%= p.esperado %> (<%= Math.round(p.frac*100) %>%)</span></td>
+              <td class="acoes-linha"><a class="btn btn-sm" href="/lancamentos?avaliacao=<%= p.avaliacao_id %>&turma=<%= p.turma_id %>&disciplina=<%= p.disciplina_id %>">Lançar</a></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } %>
+  <div class="acoes"><a class="btn" href="/painel"><%- icone('chart', 16) %> Ver painel</a><a class="btn" href="/avaliacoes"><%- icone('clipboard', 16) %> Avaliações</a></div>
+<% } %>
+
+<% if (usuario.perfil === 'admin' && locals.saude) { %>
+  <div class="kpis">
+    <a class="kpi" href="/admin/aprovacoes" style="text-decoration:none;color:inherit"><div class="rot">Aprovações pendentes</div><div class="val" style="<%= saude.pendentes ? 'color:var(--c-erro)' : '' %>"><%= saude.pendentes %></div><div class="det">contas aguardando</div></a>
+    <div class="kpi"><div class="rot">Usuários ativos</div><div class="val"><%= saude.usuariosAtivos %></div></div>
+    <div class="kpi"><div class="rot">Turmas</div><div class="val"><%= saude.turmas %></div></div>
+    <div class="kpi"><div class="rot">Alunos</div><div class="val"><%= saude.alunos %></div></div>
+    <div class="kpi"><div class="rot">Avaliações</div><div class="val"><%= saude.avaliacoes %></div><div class="det"><%= saude.rascunhos %> em rascunho</div></div>
+  </div>
+  <div class="card">
+    <h2>Saúde dos cadastros</h2>
+    <% if (!saude.turmasSemAlunos.length && !saude.turmasSemProfessor.length) { %><p class="muted">Tudo certo por aqui.</p><% } %>
+    <% if (saude.turmasSemAlunos.length) { %><div class="alerta aviso"><b>Turmas sem alunos:</b> <%= saude.turmasSemAlunos.join(', ') %>. <a href="/alunos">Importar alunos →</a></div><% } %>
+    <% if (saude.turmasSemProfessor.length) { %><div class="alerta"><b>Turmas sem professor vinculado:</b> <%= saude.turmasSemProfessor.join(', ') %>. <a href="/admin">Gerenciar vínculos →</a></div><% } %>
+  </div>
+<% } %>
+
+<% if ((usuario.perfil === 'coordenador' || usuario.perfil === 'admin')) { %>
+  <% if (locals.resumo && resumo.kpis.avaliados) { %>
+    <div class="card">
+      <h2><%= resumo.avaliacao.titulo %> <span class="muted small">· resumo</span></h2>
+      <div class="kpis">
+        <div class="kpi"><div class="rot">Alunos avaliados</div><div class="val"><%= resumo.kpis.avaliados %></div><div class="det"><%= resumo.kpis.ausentes %> ausentes</div></div>
+        <div class="kpi"><div class="rot">Média geral</div><div class="val"><%= fmt.percentual(resumo.kpis.media) %></div></div>
+        <% resumo.kpis.porDisciplina.forEach(function (d) { %><div class="kpi"><div class="rot"><%= d.nome %></div><div class="val"><%= fmt.percentual(d.media) %></div></div><% }) %>
+        <div class="kpi"><div class="rot">Alunos ≥ 70%</div><div class="val"><%= fmt.percentual(resumo.kpis.pctAcima70) %></div></div>
+      </div>
+      <div class="tabela-wrap"><table class="tabela cartoes"><thead><tr><th>Turma</th><th>Avaliados</th><th>Média</th><% resumo.kpis.porDisciplina.forEach(function (d) { %><th><%= d.sigla %></th><% }) %></tr></thead><tbody>
+      <% resumo.porTurma.forEach(function (t) { %><tr><td data-rotulo="Turma"><b><%= t.turma %></b></td><td data-rotulo="Avaliados"><%= t.avaliados %>/<%= t.alunos %></td><td data-rotulo="Média"><%= fmt.percentual(t.media) %></td><% t.porDisciplina.forEach(function (d) { %><td data-rotulo="<%= d.sigla %>"><%= fmt.percentual(d.media) %></td><% }) %></tr><% }) %>
+      </tbody></table></div>
+      <p style="margin-top:12px"><a class="btn btn-primario" href="/painel?avaliacao=<%= resumo.avaliacao.id %>"><%- icone('chart', 16) %> Abrir painel completo</a></p>
+    </div>
+  <% } else if (usuario.perfil === 'coordenador') { %>
+    <div class="card"><%- include('../../partials/empty-state', { mensagem: 'Ainda não há respostas lançadas nas avaliações publicadas.', iconeVazio: 'chart' }) %></div>
+  <% } %>
+<% } %>
+<script type="module" src="/js/inicio.js"></script>

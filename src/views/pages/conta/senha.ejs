@@ -1,0 +1,14 @@
+<div class="pagina-topo"><div><h1>Minha conta</h1><p class="sub"><%= usuario.nome %> · <%= usuario.email %> · <%= fmt.PERFIS[usuario.perfil] %></p></div></div>
+<div class="card" style="max-width:520px">
+  <h2>Trocar senha</h2>
+  <% if (usuario.trocar_senha) { %><div class="alerta aviso" role="alert">Por segurança, defina uma nova senha antes de continuar.</div><% } %>
+  <% if (locals.ok) { %><div class="alerta ok" role="status">Senha alterada com sucesso.</div><% } %>
+  <% if (erros._) { %><div class="alerta erro" role="alert"><%= erros._ %></div><% } %>
+  <form method="post" action="/conta/senha" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <%- include('../../partials/campo', { id: 'senha_atual', nome: 'senha_atual', rotulo: 'Senha atual', tipo: 'password', valor: '', attrs: 'autocomplete="current-password" required' }) %>
+    <%- include('../../partials/campo', { id: 'senha', nome: 'senha', rotulo: 'Nova senha', tipo: 'password', valor: '', ajuda: 'Mínimo 8 caracteres, com letra e número.', attrs: 'autocomplete="new-password" required' }) %>
+    <%- include('../../partials/campo', { id: 'confirmar_senha', nome: 'confirmar_senha', rotulo: 'Confirmar nova senha', tipo: 'password', valor: '', attrs: 'autocomplete="new-password" required' }) %>
+    <button class="btn btn-primario" type="submit">Salvar</button>
+  </form>
+</div>

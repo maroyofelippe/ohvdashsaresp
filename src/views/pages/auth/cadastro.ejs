@@ -1,0 +1,32 @@
+<div class="auth-card largo">
+  <h1>Criar conta</h1>
+  <p class="muted">Use seu e-mail institucional <b>@<%= dominio %></b>. Após confirmar o e-mail, a administração aprova seu acesso.</p>
+  <% if (erros._) { %><div class="alerta erro" role="alert"><%= erros._ %></div><% } %>
+  <form method="post" action="/cadastro" novalidate id="formCadastro">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <%- include('../../partials/campo', { id: 'nome', nome: 'nome', rotulo: 'Nome completo', valor: valores.nome, attrs: 'autocomplete="name" required' }) %>
+    <%- include('../../partials/campo', { id: 'email', nome: 'email', rotulo: 'E-mail institucional', tipo: 'email', valor: valores.email, attrs: 'autocomplete="email" required inputmode="email" placeholder="nome@' + dominio + '"' }) %>
+    <div class="linha-campos">
+      <%- include('../../partials/campo', { id: 'senha', nome: 'senha', rotulo: 'Senha', tipo: 'password', valor: '', ajuda: 'Mínimo 8 caracteres, com letra e número.', attrs: 'autocomplete="new-password" required' }) %>
+      <%- include('../../partials/campo', { id: 'confirmar_senha', nome: 'confirmar_senha', rotulo: 'Confirmar senha', tipo: 'password', valor: '', attrs: 'autocomplete="new-password" required' }) %>
+    </div>
+    <fieldset class="campo" style="border:0;padding:0">
+      <legend class="rotulo">Perfil solicitado</legend>
+      <div class="checks">
+        <label class="check"><input type="radio" name="perfil" value="professor" <%= valores.perfil !== 'coordenador' ? 'checked' : '' %>> Professor(a)</label>
+        <label class="check"><input type="radio" name="perfil" value="coordenador" <%= valores.perfil === 'coordenador' ? 'checked' : '' %>> Coordenador(a)</label>
+      </div>
+      <% if (erros.perfil) { %><span class="erro"><%= erros.perfil %></span><% } %>
+    </fieldset>
+    <fieldset class="campo" id="blocoTurmas" style="border:0;padding:0">
+      <legend class="rotulo">Turmas em que leciona</legend>
+      <% if (!turmas.length) { %><p class="muted small">Nenhuma turma cadastrada ainda. Procure a administração.</p><% } %>
+      <% let serieAtual = null; turmas.forEach(function (t) { if (serieAtual !== t.serieNome) { serieAtual = t.serieNome; %><div class="small muted" style="width:100%;margin-top:4px"><%= t.ano %> · <%= t.serieNome %></div><% } %>
+        <label class="check"><input type="checkbox" name="turmas" value="<%= t.id %>" <%= (valores.turmas || []).map(String).includes(String(t.id)) ? 'checked' : '' %>> <%= t.serieNome %> <%= t.letra %></label>
+      <% }) %>
+      <% if (erros.turmas) { %><span class="erro"><%= erros.turmas %></span><% } %>
+    </fieldset>
+    <button class="btn btn-primario" type="submit">Criar conta</button>
+  </form>
+  <div class="auth-links"><a href="/login">Já tenho conta</a></div>
+</div>

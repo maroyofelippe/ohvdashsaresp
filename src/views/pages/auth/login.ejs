@@ -1,0 +1,13 @@
+<div class="auth-card">
+  <h1>Entrar</h1>
+  <% if (locals.aviso) { %><div class="alerta <%= locals.avisoTipo || '' %>" role="status"><%= aviso %></div><% } %>
+  <% if (erros._) { %><div class="alerta erro" role="alert"><%= erros._ %></div><% } %>
+  <form method="post" action="/login" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="next" value="<%= locals.next || '' %>">
+    <%- include('../../partials/campo', { id: 'email', nome: 'email', rotulo: 'E-mail institucional', tipo: 'email', valor: valores.email, attrs: 'autocomplete="username" required autofocus inputmode="email"' }) %>
+    <%- include('../../partials/campo', { id: 'senha', nome: 'senha', rotulo: 'Senha', tipo: 'password', valor: '', attrs: 'autocomplete="current-password" required' }) %>
+    <button class="btn btn-primario" type="submit">Entrar</button>
+  </form>
+  <div class="auth-links"><a href="/esqueci-senha">Esqueci minha senha</a><a href="/cadastro">Criar conta</a></div>
+</div>

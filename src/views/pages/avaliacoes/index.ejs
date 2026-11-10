@@ -1,0 +1,28 @@
+<div class="pagina-topo">
+  <div><h1>Avaliações</h1><p class="sub">Simulados e avaliações com seus gabaritos. As avaliações são compartilhadas por série e ano letivo.</p></div>
+  <% if (pode('avaliacoes:criar')) { %><div class="acoes"><a class="btn btn-primario" href="/avaliacoes/nova"><%- icone('plus', 16) %> Nova avaliação</a></div><% } %>
+</div>
+<% if (!lista.length) { %>
+  <div class="card"><%- include('../../partials/empty-state', pode('avaliacoes:criar') ? { mensagem: 'Nenhuma avaliação cadastrada para as suas séries.', acaoHref: '/avaliacoes/nova', acaoTexto: 'Criar avaliação', iconeVazio: 'clipboard' } : { mensagem: 'Nenhuma avaliação cadastrada ainda.', iconeVazio: 'clipboard' }) %></div>
+<% } else { %>
+<div class="tabela-wrap"><table class="tabela cartoes">
+  <thead><tr><th data-ordenar>Avaliação</th><th data-ordenar>Série</th><th>Disciplinas</th><th data-ordenar>Questões</th><th data-ordenar>Alunos lançados</th><th>Situação</th><th></th></tr></thead>
+  <tbody>
+  <% lista.forEach(function (a) { const ehAutor = a.criado_por === usuario.id || usuario.perfil === 'admin'; %>
+    <tr>
+      <td data-rotulo="Avaliação"><b><a href="/avaliacoes/<%= a.id %>"><%= a.titulo %></a></b><br><span class="small muted"><%= Avaliacao.TIPOS[a.tipo] %> · por <%= a.autor %></span></td>
+      <td data-rotulo="Série"><%= a.serie %> · <%= a.ano %></td>
+      <td data-rotulo="Disciplinas" class="small"><%= a.disciplinas.map(function (d) { return d.sigla + (d.data ? ' ' + fmt.data(d.data) : ''); }).join(' · ') %></td>
+      <td data-rotulo="Questões"><%= a.questoes %></td>
+      <td data-rotulo="Alunos"><%= a.alunosComResposta %></td>
+      <td data-rotulo="Situação"><span class="tag <%= a.status === 'publicada' ? 'ok' : a.status === 'rascunho' ? 'aviso' : '' %>"><%= Avaliacao.STATUS[a.status] %></span></td>
+      <td class="acoes-linha">
+        <% if (a.status === 'publicada' && pode('lancamentos:lancar')) { %><a class="btn btn-sm btn-primario" href="/lancamentos?avaliacao=<%= a.id %>">Usar esta avaliação</a><% } %>
+        <% if (ehAutor && pode('avaliacoes:editar')) { %><a class="btn btn-sm" href="/avaliacoes/<%= a.id %>/editar">Editar</a><% } %>
+        <a class="btn btn-sm" href="/avaliacoes/<%= a.id %>">Gabarito</a>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% } %>

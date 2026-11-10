@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="<%= csrfToken %>">
+  <title><%= titulo %> · OHVDashSaresp</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <script src="/js/tema-init.js"></script>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div style="position:fixed;top:12px;right:12px">
+    <button class="btn btn-ghost btn-icone btn-tema" type="button" data-tema-alternar aria-label="Alternar tema claro/escuro" title="Alternar tema"><span class="i-lua"><%- icone('moon') %></span><span class="i-sol"><%- icone('sun') %></span></button>
+  </div>
+  <div class="auth-body">
+    <div class="auth-cabecalho">
+      <div class="l1"><%= escola.governo %> · <%= escola.secretaria %></div>
+      <div class="l1"><%= escola.diretoria %></div>
+      <div class="l2"><%= escola.escola %></div>
+      <div class="marca" style="margin-top:8px">OHVDashSaresp</div>
+    </div>
+    <%- body %>
+  </div>
+  <div id="toasts" aria-live="polite"></div>
+  <script type="module" src="/js/auth.js"></script>
+  <%- script %>
+</body>
+</html>

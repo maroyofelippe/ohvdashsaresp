@@ -1,0 +1,10 @@
+<div class="pagina-topo"><div><h1>Administração</h1><p class="sub">Migra o backup .json da prova de conceito (SARESP_OHV_Dashboard.html, versão 3) para o banco.</p></div></div>
+<%- include('../../partials/admin-abas') %>
+<form class="card" id="formLegado" style="max-width:760px">
+  <p>O arquivo deve conter as chaves <code>meta</code>, <code>questoes</code>, <code>alunos</code> e <code>resp</code>. Serão criados/atualizados: ano letivo, série, turmas, avaliação (com escalas, aspectos e itens desdobrados), alunos e respostas. Se a avaliação (mesmo título, série e ano) já existir, ela é atualizada e as respostas dos alunos do arquivo são substituídas.</p>
+  <div class="campo"><label for="arqLegado">Arquivo .json</label><input type="file" id="arqLegado" name="arquivo" accept=".json,application/json" required></div>
+  <label class="check" style="margin-bottom:16px"><input type="checkbox" id="somenteEstrutura"> Importar somente a estrutura (avaliação e gabarito), sem alunos e respostas</label>
+  <div class="acoes"><button class="btn btn-primario" type="submit"><%- icone('upload', 16) %> Importar</button></div>
+</form>
+<div id="relatorio"></div>
+<script type="module" src="/js/admin.js"></script>
