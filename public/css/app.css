@@ -254,6 +254,23 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
 .farol.on { background: var(--c-sucesso); opacity: 1; box-shadow: 0 0 0 3px var(--c-sucesso-suave), 0 0 8px var(--c-sucesso); animation: farol-pulso 2s ease-in-out infinite; }
 @keyframes farol-pulso { 50% { box-shadow: 0 0 0 5px transparent, 0 0 12px var(--c-sucesso); } }
 @media (prefers-reduced-motion: reduce) { .farol.on { animation: none; } }
+/* Quadros de habilidades (topo do card): um bloco por disciplina */
+.hab-quadros { display: grid; gap: var(--e-4); margin-bottom: var(--e-4); }
+.hab-grupo h3 { margin: 0 0 var(--e-2); font-size: var(--f-14); }
+.hab-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: var(--e-2); }
+.hab-cel { border: 1px solid var(--c-borda); border-top: 3px solid var(--c-borda); border-radius: var(--raio); background: var(--c-superficie-2); padding: var(--e-2) var(--e-3); text-align: center; }
+.hab-cel.ok { border-top-color: var(--c-sucesso); }
+.hab-cel.aviso { border-top-color: var(--c-alerta); }
+.hab-cel.erro { border-top-color: var(--c-erro); }
+.hab-cod { font-family: var(--f-mono); font-size: var(--f-12); color: var(--c-texto-2); }
+.hab-pct { font-size: var(--f-20, 20px); font-weight: var(--p-forte); font-variant-numeric: tabular-nums; }
+.hab-cel.ok .hab-pct { color: var(--c-sucesso); }
+.hab-cel.aviso .hab-pct { color: var(--c-alerta); }
+.hab-cel.erro .hab-pct { color: var(--c-erro); }
+.hab-turmas { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px; margin-top: 4px; font-size: 11px; color: var(--c-texto-2); }
+.hab-turmas .ok { color: var(--c-sucesso); }
+.hab-turmas .aviso { color: var(--c-alerta); }
+.hab-turmas .erro { color: var(--c-erro); }
 .insight { border-left: 3px solid var(--c-borda); padding: var(--e-2) var(--e-3); margin-bottom: var(--e-2); background: var(--c-superficie-2); border-radius: 0 var(--raio) var(--raio) 0; }
 .insight.pos { border-color: var(--c-sucesso); }
 .insight.neg { border-color: var(--c-erro); }

@@ -244,7 +244,7 @@ function render() {
                 )}<td data-rotulo="Pontos" data-valor="${r.ac}">${num(r.ac)}/${num(r.tot)}</td><td data-rotulo="Geral" data-valor="${r.p}">${tagPct(r.p)}</td></tr>`,
           )
           .join('')}</tbody></table></div></div>
-      <div class="card largo"><h2>Desempenho por habilidade ${exp('habilidades')}</h2><p class="card-sub">% de acerto (ponderado pelo peso) nas questões de cada habilidade BNCC, por turma.</p><div class="grafico" style="height:${Math.max(300, d.habilidades.filter((h) => h.n > 0).length * (20 + 8 * d.porTurma.filter((t) => t.avaliados).length))}px"><canvas id="gHab" role="img" aria-label="Desempenho por habilidade"></canvas></div></div>
+      <div class="card largo"><h2>Desempenho por habilidade ${exp('habilidades')}</h2><p class="card-sub">% de acerto (ponderado pelo peso) nas questões de cada habilidade BNCC, por turma.</p>${quadrosHabilidades(d)}<div class="grafico" style="height:${Math.max(300, d.habilidades.filter((h) => h.n > 0).length * (20 + 8 * d.porTurma.filter((t) => t.avaliados).length))}px"><canvas id="gHab" role="img" aria-label="Desempenho por habilidade"></canvas></div></div>
       ${discs
         .filter((di) => radarHabilidades(di.sigla).eixos.length)
         .map(
@@ -301,6 +301,41 @@ function render() {
   graficoComparativo();
 }
 
+/** Quadro por habilidade (geral + turmas), agrupado por disciplina: Matemática antes de Língua Portuguesa. */
+function quadrosHabilidades(d) {
+  const ordem = (sigla) => (sigla === 'MT' ? 0 : sigla === 'LP' ? 1 : 2);
+  const grupos = d.avaliacao.disciplinas
+    .map((di) => ({
+      di,
+      habs: d.habilidades
+        .filter((h) => h.disciplina === di.sigla && h.p !== null && h.n > 0)
+        .sort((a, b) => a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true })),
+    }))
+    .filter((g) => g.habs.length)
+    .sort((a, b) => ordem(a.di.sigla) - ordem(b.di.sigla) || a.di.nome.localeCompare(b.di.nome, 'pt-BR'));
+  if (!grupos.length) return '';
+  const turmas = d.habilidadesPorTurma.filter((t) => t.habilidades.some((h) => h.p !== null));
+  return `<div class="hab-quadros">${grupos
+    .map(
+      (g) =>
+        `<section class="hab-grupo" aria-label="Habilidades de ${esc(g.di.nome)}"><h3>${esc(g.di.nome)}</h3><div class="hab-grade">${g.habs
+          .map((h) => {
+            const porTurma =
+              turmas.length > 1
+                ? `<div class="hab-turmas">${turmas
+                    .map((t) => {
+                      const x = t.habilidades.find((y) => y.codigo === h.codigo);
+                      return `<span class="${classePct(x?.p)}" title="${esc(t.turma)}">${esc(t.turma.split(' ').pop())} ${pct(x?.p ?? null)}</span>`;
+                    })
+                    .join('')}</div>`
+                : '';
+            return `<div class="hab-cel ${classePct(h.p)}" title="${esc(`${h.codigo} — ${h.descritor || ''} · questões: ${h.questoes.join(', ')}`)}"><div class="hab-cod">${esc(h.codigo)}</div><div class="hab-pct">${pct(h.p)}</div>${porTurma}</div>`;
+          })
+          .join('')}</div></section>`,
+    )
+    .join('')}</div>`;
+}
+
 function tabelaQuestoes(lista) {
   if (!lista.length) return '<p class="muted">Sem dados.</p>';
   return `<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Questão</th><th>Habilidade</th><th>Acerto</th></tr></thead><tbody>${lista
@@ -340,6 +375,27 @@ function mapaCalor(d) {
   </tbody></table></div>`;
 }
 
+// Plugin local (sem dependência externa): escreve o valor no topo de cada coluna.
+const rotulosTopo = {
+  id: 'rotulosTopo',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    ctx.save();
+    ctx.font = `600 11px ${Chart.defaults.font.family}`;
+    ctx.fillStyle = css('--c-texto') || COR.texto;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    chart.data.datasets.forEach((ds, i) => {
+      if (ds.rotulo === false || (ds.type || chart.config.type) !== 'bar') return;
+      chart.getDatasetMeta(i).data.forEach((barra, j) => {
+        const v = ds.data[j];
+        if (v === null || v === undefined) return;
+        ctx.fillText(`${v}%`, barra.x, barra.y - 4);
+      });
+    });
+    ctx.restore();
+  },
+};
 const pctTick = { callback: (v) => `${v}%` };
 const tooltipPct = { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y ?? c.parsed.x}%` } };
 
@@ -478,6 +534,8 @@ function radar(el, { rotulos, titulos, geral, turmas, rodape }) {
       pointBackgroundColor: CAT[i % CAT.length],
       borderWidth: 2,
       pointRadius: 3,
+      pointHoverRadius: 7,
+      pointHitRadius: 14,
     })),
     {
       label: 'Geral',
@@ -488,6 +546,8 @@ function radar(el, { rotulos, titulos, geral, turmas, rodape }) {
       borderDash: [6, 4],
       borderWidth: 2,
       pointRadius: 3,
+      pointHoverRadius: 7,
+      pointHitRadius: 14,
     },
   ];
   graficos.push(
@@ -495,6 +555,8 @@ function radar(el, { rotulos, titulos, geral, turmas, rodape }) {
       type: 'radar',
       data: { labels: rotulos, datasets },
       options: {
+        interaction: { mode: 'index', intersect: false },
+        hover: { mode: 'index', intersect: false },
         scales: {
           r: {
             min: 0,
@@ -624,21 +686,42 @@ function graficoComparativo() {
       get: (t) => t.porDisciplina.find((y) => y.sigla === x.sigla)?.media,
     })),
   ];
+  const mediaGeral = p100(dados.kpis.media);
   graficos.push(
     new Chart(el, {
       type: 'bar',
+      plugins: [rotulosTopo],
       data: {
         labels: dados.porTurma.map((t) => t.turma),
-        datasets: series.map((s, i) => ({
-          label: s.label,
-          data: dados.porTurma.map((t) =>
-            s.get(t) === null || s.get(t) === undefined ? null : Math.round(s.get(t) * 1000) / 10,
-          ),
-          backgroundColor: CAT[i % CAT.length],
-          ...barra,
-        })),
+        datasets: [
+          ...series.map((s, i) => ({
+            label: s.label,
+            data: dados.porTurma.map((t) =>
+              s.get(t) === null || s.get(t) === undefined ? null : Math.round(s.get(t) * 1000) / 10,
+            ),
+            backgroundColor: CAT[i % CAT.length],
+            ...barra,
+            order: 2,
+          })),
+          // Linha combinada: média geral de todas as turmas do filtro (referência para cada turma)
+          {
+            type: 'line',
+            label: 'Média geral (todas as turmas)',
+            data: dados.porTurma.map(() => mediaGeral),
+            borderColor: COR.texto,
+            backgroundColor: COR.texto,
+            borderWidth: 2,
+            borderDash: [6, 4],
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            tension: 0,
+            order: 1,
+            rotulo: false,
+          },
+        ],
       },
       options: {
+        layout: { padding: { top: 18 } },
         scales: { y: { min: 0, max: 100, ticks: pctTick }, x: { grid: { display: false } } },
         plugins: { legend: { position: 'bottom' }, tooltip: tooltipPct },
       },
