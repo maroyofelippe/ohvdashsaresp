@@ -192,7 +192,7 @@ function render() {
   const linhas = G.alunos
     .map((a, l) => {
       const aus = presencas.get(a.id) === 'ausente';
-      return `<tr data-l="${l}" class="${aus ? 'ausente' : ''}"><th class="fixa" scope="row" title="${esc(a.nome)}"><span class="num">${a.numero_chamada}</span>${esc(a.nome)}${a.situacao !== 'ativo' ? ` <span class="tag aviso">${esc(a.situacao)}</span>` : ''}</th>
+      return `<tr data-l="${l}" class="${aus ? 'ausente' : ''}"><th class="fixa" scope="row" title="${esc(a.nome)}"><span class="num">${a.numero_chamada}</span><span class="nome-aluno">${esc(a.nome)}</span>${a.situacao !== 'ativo' ? ` <span class="tag aviso">${esc(a.situacao)}</span>` : ''}</th>
       <td class="cel presenca ${aus ? 'ausente' : ''}" data-l="${l}" data-c="0" tabindex="-1" role="gridcell" aria-label="Presença de ${esc(a.nome)}">${aus ? 'F' : presencas.get(a.id) === 'presente' ? 'P' : ''}</td>
       ${G.questoes.map((q, i) => `<td class="cel ${q.tipo === 'producao_texto' ? 'texto' : ''}" data-l="${l}" data-c="${i + 1}" tabindex="-1" role="gridcell"></td>`).join('')}
       <td class="total" data-tot="acertos"></td><td class="total" data-tot="pct"></td></tr>`;

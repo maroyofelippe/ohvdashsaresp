@@ -197,7 +197,9 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
 .grade th, .grade td { border-right: 1px solid var(--c-borda); border-bottom: 1px solid var(--c-borda); padding: 0; height: 32px; text-align: center; background: var(--c-superficie); }
 .grade thead th { position: sticky; top: 0; z-index: 3; background: var(--c-superficie-2); font-size: 11px; padding: 4px 2px; min-width: 38px; font-family: var(--f-mono); }
 .grade thead th small { display: block; font-family: var(--f-familia); color: var(--c-texto-2); font-weight: 400; }
-.grade .fixa { position: sticky; left: 0; z-index: 2; text-align: left; padding: 0 var(--e-2); min-width: 220px; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grade .fixa { position: sticky; left: 0; z-index: 2; text-align: left; padding: 0 var(--e-2); min-width: 120px; max-width: 400px; white-space: nowrap; overflow: hidden; }
+/* A coluna se ajusta ao maior nome (largura automática); acima de 400px o nome é cortado com reticências (o nome completo fica no title) */
+.grade .fixa .nome-aluno { display: inline-block; max-width: 358px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
 .grade .fixa .num { display: inline-block; width: 26px; color: var(--c-texto-2); font-size: var(--f-12); }
 .grade thead .fixa { z-index: 4; }
 .grade td.cel { width: 38px; min-width: 38px; font-family: var(--f-mono); font-weight: var(--p-forte); cursor: cell; outline: none; user-select: none; }
@@ -284,7 +286,8 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
   .barra-inferior a { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--c-texto-2); padding: 4px 6px; min-width: 52px; }
   .barra-inferior a[aria-current="page"] { color: var(--c-destaque); }
   .seletor-lanc { grid-template-columns: 1fr; }
-  .grade .fixa { min-width: 140px; max-width: 150px; }
+  .grade .fixa { min-width: 120px; max-width: 150px; }
+  .grade .fixa .nome-aluno { max-width: 90px; }
   .grade-wrap { max-height: calc(100vh - 240px); }
   #toasts { bottom: 76px; left: var(--e-4); right: var(--e-4); }
   /* Tabelas viram cartões */
