@@ -223,7 +223,7 @@ function render() {
             (q) => q.disciplina === di.sigla && q.tipo === 'objetiva' && q.part > 0,
           ).length;
           return n
-            ? `<div class="card largo"><h2>Ranking de respostas por questão — ${esc(di.nome)} ${exp('questoes')}</h2><p class="card-sub">Distribuição das alternativas marcadas; o gabarito aparece em verde. Distratores mais marcados que o gabarito merecem atenção.</p><div class="grafico" style="height:${Math.max(260, n * 0)}px"><canvas id="gResp_${di.sigla}" role="img" aria-label="Distribuição das respostas por questão de ${esc(di.nome)}"></canvas></div></div>`
+            ? `<div class="card largo"><h2>Ranking de respostas por questão — ${esc(di.nome)} ${exp('questoes')}</h2><p class="card-sub">Distribuição das alternativas marcadas; o gabarito aparece em verde. Distratores mais marcados que o gabarito merecem atenção.</p><div class="grafico" style="height:390px"><canvas id="gResp_${di.sigla}" role="img" aria-label="Distribuição das respostas por questão de ${esc(di.nome)}"></canvas></div></div>`
             : '';
         })
         .join('')}

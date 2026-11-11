@@ -40,6 +40,8 @@ a:hover { text-decoration: underline; }
 body.menu-recolhido .lateral { width: 60px; }
 body.menu-recolhido .lateral .rot, body.menu-recolhido .lateral .contador { display: none; }
 main { flex: 1; min-width: 0; padding: var(--e-6); max-width: 1440px; }
+/* Lançamento de respostas e painel estatístico: o conteúdo ocupa 95% da área ao lado do menu (2,5% de margem de cada lado) */
+main:has(#areaGrade), main:has(#painel) { max-width: none; padding-inline: 2.5%; }
 .barra-inferior { display: none; }
 
 /* ===== Cabeçalho de página ===== */
@@ -274,6 +276,7 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
 @media (max-width: 768px) {
   :root { --topo-h: 52px; }
   main { padding: var(--e-4) var(--e-4) 88px; }
+  main:has(#areaGrade), main:has(#painel) { padding-inline: var(--e-4); }
   .lateral { display: none; }
   .topo .btn-menu { display: none; }
   .usuario-topo .nome { display: none; }
