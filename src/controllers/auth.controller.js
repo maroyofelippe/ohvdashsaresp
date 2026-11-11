@@ -61,6 +61,7 @@ module.exports = {
     const avisos = {
       saiu: ['Você saiu do sistema.', 'ok'],
       expirou: ['Sua sessão expirou. Entre novamente.', 'aviso'],
+      inativo: ['Você foi desconectado por inatividade. Entre novamente.', 'aviso'],
       senha: ['Senha redefinida. Entre com a nova senha.', 'ok'],
     };
     const [aviso, avisoTipo] = avisos[req.query.msg] || [];
@@ -71,30 +72,26 @@ module.exports = {
     const r = v.login.safeParse(req.body);
     const valores = { email: req.body.email };
     if (!r.success)
-      return res
-        .status(400)
-        .render('pages/auth/login', {
-          ...LAYOUT,
-          titulo: 'Entrar',
-          erros: errosZod(r.error),
-          valores,
-          next: req.body.next,
-        });
+      return res.status(400).render('pages/auth/login', {
+        ...LAYOUT,
+        titulo: 'Entrar',
+        erros: errosZod(r.error),
+        valores,
+        next: req.body.next,
+      });
     try {
       const sessao = await authService.login(r.data, meta(req));
       definirCookiesSessao(res, sessao);
       return res.redirect(sessao.usuario.trocar_senha ? '/conta/senha' : destinoSeguro(req.body.next));
     } catch (e) {
       if (!e.status || e.status >= 500) return next(e);
-      return res
-        .status(e.status)
-        .render('pages/auth/login', {
-          ...LAYOUT,
-          titulo: 'Entrar',
-          erros: { _: e.message },
-          valores,
-          next: req.body.next,
-        });
+      return res.status(e.status).render('pages/auth/login', {
+        ...LAYOUT,
+        titulo: 'Entrar',
+        erros: { _: e.message },
+        valores,
+        next: req.body.next,
+      });
     }
   },
 
@@ -141,15 +138,13 @@ module.exports = {
     try {
       const r = await authService.confirmarEmail(String(req.query.token || ''), meta(req));
       if (!r) {
-        return res
-          .status(400)
-          .render('pages/auth/mensagem', {
-            ...LAYOUT,
-            titulo: 'Link inválido',
-            tituloMsg: 'Link inválido ou expirado',
-            tipo: 'erro',
-            mensagem: 'Este link não é mais válido. Faça o cadastro novamente ou procure a administração.',
-          });
+        return res.status(400).render('pages/auth/mensagem', {
+          ...LAYOUT,
+          titulo: 'Link inválido',
+          tituloMsg: 'Link inválido ou expirado',
+          tipo: 'erro',
+          mensagem: 'Este link não é mais válido. Faça o cadastro novamente ou procure a administração.',
+        });
       }
       const mensagem =
         r.status === 'pendente'
@@ -200,24 +195,20 @@ module.exports = {
     try {
       const r = v.redefinir.safeParse(req.body);
       if (!r.success)
-        return res
-          .status(400)
-          .render('pages/auth/redefinir', {
-            ...LAYOUT,
-            titulo: 'Nova senha',
-            token: req.body.token,
-            erros: errosZod(r.error),
-          });
+        return res.status(400).render('pages/auth/redefinir', {
+          ...LAYOUT,
+          titulo: 'Nova senha',
+          token: req.body.token,
+          erros: errosZod(r.error),
+        });
       const ok = await authService.redefinirSenha(r.data.token, r.data.senha, meta(req));
       if (!ok)
-        return res
-          .status(400)
-          .render('pages/auth/redefinir', {
-            ...LAYOUT,
-            titulo: 'Nova senha',
-            token: req.body.token,
-            erros: { _: 'Link inválido ou expirado. Solicite um novo.' },
-          });
+        return res.status(400).render('pages/auth/redefinir', {
+          ...LAYOUT,
+          titulo: 'Nova senha',
+          token: req.body.token,
+          erros: { _: 'Link inválido ou expirado. Solicite um novo.' },
+        });
       limparCookiesSessao(res);
       res.redirect('/login?msg=senha');
     } catch (e) {

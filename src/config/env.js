@@ -30,6 +30,8 @@ const schema = z.object({
   DB_NAME_TEST: z.string().default('OHVDashSaresp_test'),
   DB_USER: z.string().default('ohv'),
   DB_PASSWORD: z.string().default(''),
+  SESSAO_INATIVIDADE_MIN: num(30), // desconecta após N minutos sem uso
+  SESSAO_ONLINE_MIN: num(10), // "online" = atividade nos últimos N minutos (painel do admin)
   JWT_SECRET: z.string().min(32, 'JWT_SECRET deve ter ao menos 32 caracteres'),
   REFRESH_SECRET: z.string().min(32, 'REFRESH_SECRET deve ter ao menos 32 caracteres'),
   CSRF_SECRET: z.string().min(32, 'CSRF_SECRET deve ter ao menos 32 caracteres'),

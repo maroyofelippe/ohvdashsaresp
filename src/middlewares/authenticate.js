@@ -39,13 +39,14 @@ async function authenticate(req, res, next) {
     }
     if (payload) {
       const u = await Usuario.findByPk(payload.sub);
-      if (u && u.status === 'ativo' && u.token_version === payload.tv) {
+      if (u && u.status === 'ativo' && u.token_version === payload.tv && !auth.sessaoInativa(u)) {
         req.usuario = u;
         req.escopo = await escopoService.calcular(u);
       }
     }
     if (!req.usuario && req.cookies?.ohv_s) req.podeRenovar = true;
     res.locals.usuario = req.usuario;
+    res.locals.inatividadeMin = env.SESSAO_INATIVIDADE_MIN;
     res.locals.pode = (perm) => pode(req.usuario, perm);
     res.locals.menu = req.usuario ? menuPara(req.usuario) : [];
     next();
@@ -68,12 +69,10 @@ function requireAuth(req, res, next) {
     return next();
   }
   if (ehApi(req)) {
-    return res
-      .status(401)
-      .json({
-        erro: 'Sessão expirada ou inexistente.',
-        detalhes: { codigo: req.podeRenovar ? 'token_expirado' : 'nao_autenticado' },
-      });
+    return res.status(401).json({
+      erro: 'Sessão expirada ou inexistente.',
+      detalhes: { codigo: req.podeRenovar ? 'token_expirado' : 'nao_autenticado' },
+    });
   }
   const destino = encodeURIComponent(req.originalUrl);
   if (req.podeRenovar) return res.redirect(`/auth/refresh?next=${destino}`);

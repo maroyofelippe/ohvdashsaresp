@@ -44,6 +44,7 @@ async function listar(filtros = {}) {
   return {
     itens: rows.map((u) => ({
       ...u.toJSON(),
+      online: authService.estaOnline(u),
       vinculos: (u.vinculos || [])
         .filter((v) => v.turma)
         .map((v) => ({

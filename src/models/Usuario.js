@@ -30,6 +30,8 @@ module.exports = (sequelize, DataTypes) => {
       falhas_login: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
       bloqueado_ate: { type: DataTypes.DATE, allowNull: true },
       ultimo_login: { type: DataTypes.DATE, allowNull: true },
+      // Último sinal de uso informado pelo navegador (null = sem sessão ativa/saiu).
+      ultima_atividade: { type: DataTypes.DATE, allowNull: true },
     },
     {
       tableName: 'usuarios',

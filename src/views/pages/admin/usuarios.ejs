@@ -12,12 +12,13 @@
   <div class="card"><%- include('../../partials/empty-state', { mensagem: aprovacoes ? 'Nenhuma conta aguardando aprovação.' : 'Nenhum usuário encontrado.', iconeVazio: 'users' }) %></div>
 <% } else { %>
 <div class="tabela-wrap"><table class="tabela cartoes">
-  <thead><tr><th data-ordenar>Nome</th><th data-ordenar>Perfil</th><th>Status</th><th>Turmas</th><th data-ordenar>Último acesso</th><th></th></tr></thead>
+  <thead><tr><th data-ordenar>Nome</th><th data-ordenar>Perfil</th><th>Sessão</th><th>Status</th><th>Turmas</th><th data-ordenar>Último acesso</th><th></th></tr></thead>
   <tbody>
   <% lista.itens.forEach(function (u) { %>
     <tr>
       <td data-rotulo="Nome"><b><%= u.nome %></b><% if (u.nativo) { %> <span class="tag info">nativo</span><% } %><br><span class="small muted"><%= u.email %></span></td>
       <td data-rotulo="Perfil"><%= fmt.PERFIS[u.perfil] %></td>
+      <td data-rotulo="Sessão"><span class="farol-rot"><span class="farol <%= u.online ? 'on' : 'off' %>" role="img" aria-label="<%= u.online ? 'Online' : 'Offline' %>" title="<%= u.online ? 'Online' : 'Offline' %> · <%= u.ultima_atividade ? 'última atividade ' + fmt.dataHora(u.ultima_atividade) : 'sem sessão ativa' %>"></span><%= u.online ? 'Online' : 'Offline' %></span></td>
       <td data-rotulo="Status"><span class="tag <%= u.status === 'ativo' ? 'ok' : u.status === 'inativo' ? '' : 'aviso' %>"><%= fmt.STATUS_USUARIO[u.status] %></span></td>
       <td data-rotulo="Turmas" class="small"><%= u.vinculos.map(function (v) { return v.nome + (v.status === 'pendente' ? ' (pendente)' : ''); }).join(', ') || '—' %></td>
       <td data-rotulo="Último acesso" class="small"><%= u.ultimo_login ? fmt.dataHora(u.ultimo_login) : '—' %></td>

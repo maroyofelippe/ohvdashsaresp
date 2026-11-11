@@ -7,7 +7,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '.env'), quiet: t
 const { Client } = require('pg');
 const { sslConfig } = require('../src/config/db-ssl');
 
-const MIGRATIONS = 5;
+const MIGRATIONS = 6;
 
 (async () => {
   const cfg = {

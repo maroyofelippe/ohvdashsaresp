@@ -15,6 +15,14 @@ router.get(
 );
 
 router.use(requireAuth);
+// Sinal de uso enviado pelo navegador (mantém a sessão viva e o usuário "online").
+router.post(
+  '/sessao/atividade',
+  a(async (req, res) => {
+    await require('../../services/auth.service').registrarAtividade(req.usuario.id);
+    res.json({ ok: true });
+  }),
+);
 router.use('/estrutura', require('./estrutura.routes'));
 router.use('/alunos', require('./alunos.routes'));
 router.use('/avaliacoes', require('./avaliacoes.routes'));

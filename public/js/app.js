@@ -2,6 +2,7 @@
 import { $, $$, toast, toastPendente, tabelasOrdenaveis, dadosJson, lembrar, confirmar } from './lib/ui.js';
 import { api, baixar } from './lib/api.js';
 import './lib/tema.js';
+import { iniciarSessao } from './lib/sessao.js';
 
 // Menu recolhível (preferência por navegador)
 if (lembrar('menuRecolhido')) document.body.classList.add('menu-recolhido');
@@ -10,6 +11,7 @@ $('#btnMenu')?.addEventListener('click', () => {
   lembrar('menuRecolhido', document.body.classList.contains('menu-recolhido'));
 });
 
+iniciarSessao();
 toastPendente();
 const flash = dadosJson('flash');
 if (flash) toast(flash.msg, flash.tipo);

@@ -18,6 +18,20 @@ const BLOQUEIO_MS = 15 * 60 * 1000;
 const MSG_LOGIN = 'E-mail ou senha inválidos.';
 const HASH_FALSO = bcrypt.hashSync('senha-inexistente', CUSTO_BCRYPT);
 
+const INATIVIDADE_MS = env.SESSAO_INATIVIDADE_MIN * 60 * 1000;
+const ONLINE_MS = env.SESSAO_ONLINE_MIN * 60 * 1000;
+
+/** Sem uso há mais que o limite? (sem registro de atividade, vale o último login; sem ambos, não expira) */
+function sessaoInativa(usuario, agora = Date.now()) {
+  const ref = usuario.ultima_atividade || usuario.ultimo_login;
+  return !!ref && agora - new Date(ref).getTime() > INATIVIDADE_MS;
+}
+/** "Online" = sinal de atividade recente (o navegador envia um a cada 5 min enquanto há uso). */
+const estaOnline = (usuario, agora = Date.now()) =>
+  !!usuario.ultima_atividade && agora - new Date(usuario.ultima_atividade).getTime() <= ONLINE_MS;
+const registrarAtividade = (usuarioId) =>
+  Usuario.update({ ultima_atividade: new Date() }, { where: { id: usuarioId } });
+
 const hashSenha = (s) => bcrypt.hash(s, CUSTO_BCRYPT);
 const conferirSenha = (s, h) => bcrypt.compare(String(s), h);
 
@@ -80,7 +94,7 @@ async function rotacionarRefresh(token, meta = {}) {
     }
     if (new Date(atual.expira_em) < new Date()) return null;
     const usuario = await Usuario.findByPk(atual.usuario_id, { transaction: t });
-    if (!usuario || usuario.status !== 'ativo') {
+    if (!usuario || usuario.status !== 'ativo' || sessaoInativa(usuario)) {
       await revogarFamilia(atual.familia, t);
       return null;
     }
@@ -92,6 +106,11 @@ async function rotacionarRefresh(token, meta = {}) {
 
 async function revogarRefresh(token) {
   if (!token) return;
+  const rt = await RefreshToken.findOne({
+    where: { token_hash: hashToken(token) },
+    attributes: ['usuario_id'],
+  });
+  if (rt) await Usuario.update({ ultima_atividade: null }, { where: { id: rt.usuario_id } });
   await RefreshToken.update(
     { revogado_em: new Date() },
     { where: { token_hash: hashToken(token), revogado_em: null } },
@@ -132,7 +151,12 @@ async function login({ email: em, senha }, meta = {}) {
     throw AppError.forbidden('Seu cadastro aguarda aprovação do administrador.');
   if (usuario.status === 'inativo')
     throw AppError.forbidden('Sua conta está desativada. Procure a administração.');
-  await usuario.update({ falhas_login: 0, bloqueado_ate: null, ultimo_login: new Date() });
+  await usuario.update({
+    falhas_login: 0,
+    bloqueado_ate: null,
+    ultimo_login: new Date(),
+    ultima_atividade: new Date(),
+  });
   const { token: refresh } = await criarRefresh(usuario, meta);
   await auditoria.registrar({
     usuarioId: usuario.id,
@@ -346,6 +370,9 @@ module.exports = {
   criarRefresh,
   rotacionarRefresh,
   revogarRefresh,
+  sessaoInativa,
+  estaOnline,
+  registrarAtividade,
   login,
   cadastrar,
   confirmarEmail,
