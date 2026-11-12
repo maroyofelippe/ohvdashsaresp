@@ -1,4 +1,5 @@
 import './lib/tema.js';
+import './lib/senha.js';
 // Tela de cadastro: mostra as turmas apenas para o perfil Professor.
 const form = document.getElementById('formCadastro');
 if (form) {

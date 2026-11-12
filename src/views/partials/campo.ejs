@@ -1,6 +1,9 @@
 <div class="campo">
   <label for="<%= id %>"><%= rotulo %></label>
+  <% const ehSenha = locals.tipo === 'password'; %>
+  <% if (ehSenha) { %><div class="input-senha"><% } %>
   <input id="<%= id %>" name="<%= nome %>" type="<%= locals.tipo || 'text' %>" value="<%= locals.valor || '' %>" <%- locals.attrs || '' %> <% if (erros && erros[nome]) { %>aria-invalid="true" aria-describedby="<%= id %>-erro"<% } %>>
+  <% if (ehSenha) { %><button type="button" class="btn-olho" data-alternar-senha="<%= id %>" aria-label="Mostrar senha" aria-pressed="false" title="Mostrar senha"><span class="ico-mostrar"><%- icone('eye', 18) %></span><span class="ico-ocultar" hidden><%- icone('eye-off', 18) %></span></button></div><% } %>
   <% if (locals.ajuda) { %><span class="ajuda"><%= ajuda %></span><% } %>
   <% if (erros && erros[nome]) { %><span class="erro" id="<%= id %>-erro"><%= erros[nome] %></span><% } %>
 </div>

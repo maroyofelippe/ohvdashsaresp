@@ -2,6 +2,7 @@
 import { $, $$, toast, toastPendente, tabelasOrdenaveis, dadosJson, lembrar, confirmar } from './lib/ui.js';
 import { api, baixar } from './lib/api.js';
 import './lib/tema.js';
+import './lib/senha.js';
 import { iniciarSessao } from './lib/sessao.js';
 
 // Menu recolhível (preferência por navegador)
