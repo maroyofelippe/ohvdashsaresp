@@ -48,7 +48,8 @@ const MENU = [
     soSemPerm: 'lancamentos:lancar',
   },
   { href: '/painel', rotulo: 'Painel', icone: 'chart', perm: 'painel:ver' },
-  { href: '/hall-da-fama', rotulo: 'Hall da Fama', icone: 'trophy', perm: 'painel:ver' },
+  // oculto: true esconde a aba do menu (a página /hall-da-fama continua pronta; troque para false para exibir)
+  { href: '/hall-da-fama', rotulo: 'Hall da Fama', icone: 'trophy', perm: 'painel:ver', oculto: true },
   { href: '/avaliacoes', rotulo: 'Avaliações', icone: 'clipboard', perm: 'avaliacoes:ver' },
   { href: '/alunos', rotulo: 'Alunos', icone: 'users', perm: 'alunos:ver' },
   { href: '/turmas', rotulo: 'Turmas', icone: 'grid', perm: 'estrutura:ver' },
@@ -57,7 +58,7 @@ const MENU = [
 
 function menuPara(usuario) {
   return MENU.filter(
-    (m) => (!m.perm || pode(usuario, m.perm)) && !(m.soSemPerm && pode(usuario, m.soSemPerm)),
+    (m) => !m.oculto && (!m.perm || pode(usuario, m.perm)) && !(m.soSemPerm && pode(usuario, m.soSemPerm)),
   );
 }
 
