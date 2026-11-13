@@ -264,21 +264,7 @@ function render() {
       }
       <div class="card"><h2>Maiores acertos ${exp('questoes')}</h2>${tabelaQuestoes(d.maiores)}</div>
       <div class="card"><h2>Menores acertos ${exp('questoes')}</h2>${tabelaQuestoes(d.menores)}</div>
-      <div class="card largo"><h2>Ranking dos alunos ${exp('ranking')}</h2>
-        <div class="tabela-wrap" style="max-height:440px"><table class="tabela cartoes"><thead><tr><th data-ordenar>Pos.</th><th data-ordenar>Aluno</th><th data-ordenar>Turma</th>${discs.map((x) => `<th data-ordenar>${esc(x.sigla)}</th>`).join('')}<th data-ordenar>Pontos</th><th data-ordenar>Geral</th></tr></thead><tbody>
-        ${d.ranking
-          .map(
-            (r) =>
-              `<tr${d.aluno && d.aluno.id === r.id ? ' style="background:var(--c-destaque-suave)"' : ''}><td data-rotulo="Posição" data-valor="${r.posicao}"><b>${r.posicao}º</b></td><td data-rotulo="Aluno">${esc(r.nome)}</td><td data-rotulo="Turma">${esc(r.turma)}</td>${discs
-                .map(
-                  (x) =>
-                    `<td data-rotulo="${esc(x.sigla)}" data-valor="${r.porDisc[x.sigla] ? r.porDisc[x.sigla].p : -1}">${r.porDisc[x.sigla] ? `${num(r.porDisc[x.sigla].ac)}/${num(r.porDisc[x.sigla].tot)}` : '–'}</td>`,
-                )
-                .join(
-                  '',
-                )}<td data-rotulo="Pontos" data-valor="${r.ac}">${num(r.ac)}/${num(r.tot)}</td><td data-rotulo="Geral" data-valor="${r.p}">${tagPct(r.p)}</td></tr>`,
-          )
-          .join('')}</tbody></table></div></div>
+      <div class="card largo"><h2>Ranking dos alunos ${exp('ranking')}</h2>${tabelaRanking(d)}</div>
       <div class="card largo"><h2>Comparativo entre turmas ${exp('comparativo')}</h2><div class="grafico"><canvas id="gComp" role="img" aria-label="Comparativo entre turmas"></canvas></div>
         <div class="tabela-wrap" style="margin-top:12px"><table class="tabela cartoes"><thead><tr><th>Turma</th><th>Avaliados</th><th>Ausentes</th><th>Média</th>${discs.map((x) => `<th>${esc(x.sigla)}</th>`).join('')}<th>≥ 70%</th></tr></thead><tbody>
         ${d.porTurma.map((t) => `<tr><td data-rotulo="Turma"><b>${esc(t.turma)}</b></td><td data-rotulo="Avaliados">${t.avaliados}/${t.alunos}</td><td data-rotulo="Ausentes">${t.ausentes}</td><td data-rotulo="Média">${tagPct(t.media)}</td>${t.porDisciplina.map((x) => `<td data-rotulo="${esc(x.sigla)}">${pct(x.media)}</td>`).join('')}<td data-rotulo="≥ 70%">${t.acima70}</td></tr>`).join('')}
@@ -294,6 +280,7 @@ function render() {
           .join('')}</div></div>
       <div class="card largo"><h2>Mapa de calor — aluno × questão ${exp('mapa')}</h2><p class="card-sub">LP 1–16 e MT 1–21, por turma, em ordem alfabética. Verde com ✓ = acerto; vermelho com ✗ = erro; amarelo = crédito parcial (% da questão). F = ausente na disciplina. Passe o mouse para ver os detalhes.</p>${mapaCalor(d)}</div>
     </div>`;
+  alinharNomesMapa();
   tabelasOrdenaveis(raiz);
   $$('[data-exp]', raiz).forEach((b) =>
     b.addEventListener('click', () =>
@@ -311,6 +298,44 @@ function render() {
   });
   if (d.escalares.some((e) => e.part)) graficoEscalares();
   graficoComparativo();
+}
+
+/**
+ * Ranking dos alunos: a coluna de cada disciplina e os Pontos consideram só as questões de alternativas/escalares
+ * (LP 16 + MT 21 = 37); a produção textual fica numa coluna própria (PT) e não entra nos Pontos.
+ */
+function tabelaRanking(d) {
+  const discs = d.avaliacao.disciplinas;
+  const temTexto = d.ranking.some((r) => r.texto);
+  const lista = d.ranking
+    .map((r) => ({ ...r, pObj: r.totObj ? r.acObj / r.totObj : null }))
+    .sort(
+      (a, b) => b.acObj - a.acObj || (b.pObj ?? 0) - (a.pObj ?? 0) || a.nome.localeCompare(b.nome, 'pt-BR'),
+    );
+  let pos = 0;
+  let ult = null;
+  lista.forEach((r, n) => {
+    const chave = Math.round(r.acObj * 10);
+    if (chave !== ult) {
+      pos = n + 1;
+      ult = chave;
+    }
+    r.pos = pos;
+  });
+  const cel = (rot, v, txt) => `<td data-rotulo="${esc(rot)}" data-valor="${v}">${txt}</td>`;
+  return `<div class="tabela-wrap" style="max-height:440px"><table class="tabela cartoes"><thead><tr><th data-ordenar>Pos.</th><th data-ordenar>Aluno</th><th data-ordenar>Turma</th>${discs.map((x) => `<th data-ordenar>${esc(x.sigla)}</th>`).join('')}${temTexto ? '<th data-ordenar title="Produção textual (não entra nos Pontos)">PT</th>' : ''}<th data-ordenar title="Pontos de LP + MT (somente questões de alternativas)">Pontos</th><th data-ordenar>Geral</th></tr></thead><tbody>
+    ${lista
+      .map((r) => {
+        const por = (x) => r.porDiscObj?.[x.sigla];
+        return `<tr${d.aluno && d.aluno.id === r.id ? ' style="background:var(--c-destaque-suave)"' : ''}><td data-rotulo="Posição" data-valor="${r.pos}"><b>${r.pos}º</b></td><td data-rotulo="Aluno">${esc(r.nome)}</td><td data-rotulo="Turma">${esc(r.turma)}</td>${discs
+          .map((x) =>
+            cel(x.sigla, por(x) ? por(x).p : -1, por(x) ? `${num(por(x).ac)}/${num(por(x).tot)}` : '–'),
+          )
+          .join(
+            '',
+          )}${temTexto ? cel('PT', r.texto ? r.texto.p : -1, r.texto ? `${num(r.texto.ac)}/${num(r.texto.tot)}` : '–') : ''}${cel('Pontos', r.acObj, `${num(r.acObj)}/${num(r.totObj)}`)}${cel('Geral', r.pObj ?? -1, tagPct(r.pObj))}</tr>`;
+      })
+      .join('')}</tbody></table></div>`;
 }
 
 /** Quadro por habilidade (geral + turmas), agrupado por disciplina: Matemática antes de Língua Portuguesa. */
@@ -392,6 +417,11 @@ function mapaCalor(d) {
       return `<td class="hm hm-erro" title="${esc(`${a.nome} · ${q.codigo}: erro`)}">${FA_XMARK}<span class="sr-only">erro</span></td>`;
     return `<td class="hm hm-parc" title="${esc(`${a.nome} · ${q.codigo}: ${pct(v)} (parcial)`)}">${Math.round(v * 100)}</td>`;
   };
+  // Coluna estreita (1/3 de uma célula) separando o bloco de uma disciplina do seguinte
+  const sepTh = '<th class="hm-sep" aria-hidden="true"></th>';
+  const sepTd = '<td class="hm-sep" aria-hidden="true"></td>';
+  const comSep = (itens, fn) =>
+    itens.map((it, n) => (n && it.q.disciplina !== itens[n - 1].q.disciplina ? sepTd : '') + fn(it)).join('');
   const turmas = [...new Set(m.alunos.map((a) => a.turma))].sort((a, b) =>
     a.localeCompare(b, 'pt-BR', { numeric: true }),
   );
@@ -400,8 +430,8 @@ function mapaCalor(d) {
       const alunos = m.alunos
         .filter((a) => a.turma === turma)
         .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
-      return `<section class="mapa-turma" aria-label="Mapa de calor — ${esc(turma)}"><h3>${esc(turma)} <span class="muted small">· ${alunos.length} aluno(s)</span></h3><div class="tabela-wrap" style="max-height:520px"><table class="heatmap"><thead><tr><th class="nome" style="position:sticky;left:0;z-index:2">Aluno</th>${indices.map(({ q }) => `<th title="${esc(q.codigo)}">${esc(q.codigo.replace(/^[A-Z]+/, ''))}<br><span class="muted">${esc(q.disciplina)}</span></th>`).join('')}<th>%</th></tr></thead><tbody>
-    ${alunos.map((a) => `<tr><td class="nome">${esc(a.nome)}</td>${indices.map(({ q, i }) => cel(a.valores[i], a, q)).join('')}<td><b>${pct(a.p)}</b></td></tr>`).join('')}
+      return `<section class="mapa-turma" aria-label="Mapa de calor — ${esc(turma)}"><h3>${esc(turma)} <span class="muted small">· ${alunos.length} aluno(s)</span></h3><div class="tabela-wrap" style="max-height:520px"><table class="heatmap"><thead><tr><th class="nome" style="position:sticky;left:0;z-index:2">Aluno</th>${indices.map((it, n) => (n && it.q.disciplina !== indices[n - 1].q.disciplina ? sepTh : '') + `<th title="${esc(it.q.codigo)}">${esc(it.q.codigo.replace(/^[A-Z]+/, ''))}<br><span class="muted">${esc(it.q.disciplina)}</span></th>`).join('')}<th>%</th></tr></thead><tbody>
+    ${alunos.map((a) => `<tr><td class="nome">${esc(a.nome)}</td>${comSep(indices, ({ q, i }) => cel(a.valores[i], a, q))}<td><b>${pct(a.p)}</b></td></tr>`).join('')}
   </tbody></table></div></section>`;
     })
     .join('');
@@ -428,6 +458,14 @@ const rotulosTopo = {
     ctx.restore();
   },
 };
+/** Todas as turmas do mapa de calor usam a maior largura de nome necessária (colunas alinhadas). */
+function alinharNomesMapa() {
+  const celulas = $$('.heatmap .nome', raiz);
+  const fixar = (px) => celulas.forEach((c) => (c.style.minWidth = c.style.width = c.style.maxWidth = px));
+  fixar('');
+  const maior = Math.max(0, ...$$('.heatmap th.nome', raiz).map((c) => c.getBoundingClientRect().width));
+  if (maior) fixar(`${Math.ceil(maior)}px`);
+}
 const pctTick = { callback: (v) => `${v}%` };
 const tooltipPct = { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y ?? c.parsed.x}%` } };
 

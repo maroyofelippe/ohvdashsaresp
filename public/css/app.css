@@ -251,6 +251,7 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
 .heatmap td.hm-f { background: transparent; color: var(--c-texto-2); font-weight: 400; }
 :root[data-tema="escuro"] .heatmap td.hm:not(.hm-f) { background: color-mix(in srgb, var(--hm) 30%, var(--c-superficie)); }
 .hm-ico { width: 11px; height: 11px; vertical-align: -1px; }
+.heatmap .hm-sep { width: 10px; min-width: 10px; max-width: 10px; padding: 0; border: 0; background: transparent; }
 .heatmap th { font-family: var(--f-mono); background: var(--c-superficie-2); position: sticky; top: 0; }
 .heatmap td.nome { text-align: left; padding: 0 6px; white-space: nowrap; position: sticky; left: 0; background: var(--c-superficie); min-width: 180px; }
 /* Farol de sessão (admin): verde pulsante = online; cinza = offline */

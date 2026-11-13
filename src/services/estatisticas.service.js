@@ -197,6 +197,11 @@ async function computar(av, turmas, f) {
   // ---------- Desempenho por aluno ----------
   const resultados = alunos.map((a) => {
     const porDisc = {};
+    const porDiscObj = {}; // só questões que não são produção textual
+    let acObj = 0;
+    let totObj = 0;
+    let acTxt = 0;
+    let totTxt = 0;
     let ac = 0;
     let tot = 0;
     let part = false;
@@ -207,8 +212,18 @@ async function computar(av, turmas, f) {
       if (pres.get(a.id)?.[d.id] === 'ausente') ausente = true;
       if (!presente(a.id, d.id) || !totD) {
         porDisc[d.sigla] = null;
+        porDiscObj[d.sigla] = null;
         continue;
       }
+      const qsObj = qs.filter((q) => q.tipo !== 'producao_texto');
+      const qsTxt = qs.filter((q) => q.tipo === 'producao_texto');
+      const acO = qsObj.reduce((s, q) => s + fracao(a.id, q) * q.peso, 0);
+      const totO = qsObj.reduce((s, q) => s + q.peso, 0);
+      porDiscObj[d.sigla] = totO ? { ac: r4(acO), tot: totO, p: r4(acO / totO) } : null;
+      acObj += acO;
+      totObj += totO;
+      acTxt += qsTxt.reduce((s, q) => s + fracao(a.id, q) * q.peso, 0);
+      totTxt += qsTxt.reduce((s, q) => s + q.peso, 0);
       const acD = qs.reduce((s, q) => s + fracao(a.id, q) * q.peso, 0);
       porDisc[d.sigla] = {
         ac: r4(acD),
@@ -227,6 +242,10 @@ async function computar(av, turmas, f) {
       turma_id: a.turma_id,
       turma: turmaNome[a.turma_id],
       porDisc,
+      porDiscObj,
+      acObj: r4(acObj),
+      totObj,
+      texto: totTxt ? { ac: r4(acTxt), tot: totTxt, p: r4(acTxt / totTxt) } : null,
       ac: r4(ac),
       tot,
       p: part ? r4(ac / tot) : null,
@@ -589,6 +608,10 @@ async function computar(av, turmas, f) {
       numero: r.numero,
       turma: r.turma,
       porDisc: r.porDisc,
+      porDiscObj: r.porDiscObj,
+      acObj: r.acObj,
+      totObj: r.totObj,
+      texto: r.texto,
       ac: r.ac,
       tot: r.tot,
       p: r.p,
