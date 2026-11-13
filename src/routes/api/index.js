@@ -28,6 +28,7 @@ router.use('/alunos', require('./alunos.routes'));
 router.use('/avaliacoes', require('./avaliacoes.routes'));
 router.use('/lancamentos', require('./lancamentos.routes'));
 router.use('/painel', require('./painel.routes'));
+router.use('/hall-da-fama', require('./hall.routes'));
 router.use('/admin', require('./admin.routes'));
 router.use((req, res) => res.status(404).json({ erro: 'Recurso não encontrado.', detalhes: null }));
 

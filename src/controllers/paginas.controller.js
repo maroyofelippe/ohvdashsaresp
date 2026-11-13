@@ -64,6 +64,10 @@ module.exports = {
     res.render('pages/painel/index', { titulo: 'Painel' });
   },
 
+  hall(req, res) {
+    res.render('pages/hall/index', { titulo: 'Hall da Fama' });
+  },
+
   async avaliacoes(req, res) {
     const lista = await avaliacoesSvc.listar(req.query, req.escopo);
     res.render('pages/avaliacoes/index', { titulo: 'Avaliações', lista, Avaliacao });

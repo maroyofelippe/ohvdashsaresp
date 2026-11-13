@@ -337,3 +337,37 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
   .kpi .val { font-size: var(--f-24); }
   .popover, .painel-texto { position: fixed !important; left: 12px !important; right: 12px; bottom: 72px; top: auto !important; width: auto; max-height: 60vh; overflow: auto; }
 }
+
+/* Medalhas do ranking (1º ouro, 2º prata, 3º bronze) — tons ajustados para os temas claro e escuro */
+.medalha { --medalha: var(--c-texto-2); display: inline-flex; vertical-align: middle; margin-right: 6px; color: var(--medalha); }
+.medalha-ico { width: 16px; height: 16px; }
+.medalha.ouro { --medalha: #c98a00; }
+.medalha.prata { --medalha: #7b8696; }
+.medalha.bronze { --medalha: #a95a1f; }
+:root[data-tema='escuro'] .medalha.ouro { --medalha: #fbbf24; }
+:root[data-tema='escuro'] .medalha.prata { --medalha: #cbd5e1; }
+:root[data-tema='escuro'] .medalha.bronze { --medalha: #e8955a; }
+
+/* Hall da Fama */
+.hall-titulo { margin: var(--e-6) 0 var(--e-3); font-size: var(--f-18, 18px); }
+.hall-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--e-4); }
+.hall-lista { list-style: none; margin: var(--e-2) 0 0; padding: 0; display: grid; gap: 2px; }
+.hall-aluno { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: var(--e-2); padding: 6px 0; border-top: 1px solid var(--c-borda); }
+.hall-aluno:first-child { border-top: 0; }
+.hall-pos { text-align: center; font-size: var(--f-14); }
+.hall-pos .medalha { margin: 0; }
+.hall-pos .medalha-ico { width: 20px; height: 20px; }
+.hall-nome { display: grid; line-height: 1.25; min-width: 0; }
+.hall-nome small { font-size: var(--f-12); }
+.podio { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--e-3); margin-top: var(--e-3); }
+.podio-cartao { text-align: center; border: 1px solid var(--c-borda); border-top: 4px solid var(--medalha, var(--c-borda)); border-radius: var(--raio); background: var(--c-superficie-2); padding: var(--e-4) var(--e-3); }
+.podio-cartao .medalha { margin: 0 0 var(--e-2); }
+.podio-cartao .medalha-ico { width: 40px; height: 40px; }
+.podio-cartao.pos-1 { --medalha: #c98a00; }
+.podio-cartao.pos-2 { --medalha: #7b8696; }
+.podio-cartao.pos-3 { --medalha: #a95a1f; }
+:root[data-tema='escuro'] .podio-cartao.pos-1 { --medalha: #fbbf24; }
+:root[data-tema='escuro'] .podio-cartao.pos-2 { --medalha: #cbd5e1; }
+:root[data-tema='escuro'] .podio-cartao.pos-3 { --medalha: #e8955a; }
+.podio-nome { font-weight: var(--p-forte); font-size: var(--f-16, 16px); }
+.podio-pct { font-size: 28px; font-weight: var(--p-forte); font-variant-numeric: tabular-nums; margin-top: var(--e-1); }

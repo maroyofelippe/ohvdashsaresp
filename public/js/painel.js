@@ -1,6 +1,7 @@
 // Painel estatístico: filtros na URL, visões com Chart.js (servido localmente) e exportação.
 import { $, $$, esc, pct, num, toast, classePct, tabelasOrdenaveis } from './lib/ui.js';
 import { api, baixar } from './lib/api.js';
+import { medalha } from './lib/medalha.js';
 
 const raiz = $('#painel');
 const f = {
@@ -327,7 +328,7 @@ function tabelaRanking(d) {
     ${lista
       .map((r) => {
         const por = (x) => r.porDiscObj?.[x.sigla];
-        return `<tr${d.aluno && d.aluno.id === r.id ? ' style="background:var(--c-destaque-suave)"' : ''}><td data-rotulo="Posição" data-valor="${r.pos}"><b>${r.pos}º</b></td><td data-rotulo="Aluno">${esc(r.nome)}</td><td data-rotulo="Turma">${esc(r.turma)}</td>${discs
+        return `<tr${d.aluno && d.aluno.id === r.id ? ' style="background:var(--c-destaque-suave)"' : ''}><td data-rotulo="Posição" data-valor="${r.pos}">${medalha(r.pos)}<b>${r.pos}º</b></td><td data-rotulo="Aluno">${esc(r.nome)}</td><td data-rotulo="Turma">${esc(r.turma)}</td>${discs
           .map((x) =>
             cel(x.sigla, por(x) ? por(x).p : -1, por(x) ? `${num(por(x).ac)}/${num(por(x).tot)}` : '–'),
           )

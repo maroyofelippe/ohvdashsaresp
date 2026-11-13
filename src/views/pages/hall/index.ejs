@@ -1,0 +1,10 @@
+<div class="pagina-topo">
+  <div><h1>Hall da Fama</h1><p class="sub">Os alunos que melhor se destacaram: pódio de cada turma, destaques de cada série e o ranking da escola. Classificação pelo % de acerto nas questões de alternativas (LP + MT).</p></div>
+  <div class="acoes"><button class="btn" type="button" data-imprimir><%- icone('print', 16) %> Imprimir / PDF</button></div>
+</div>
+<form class="filtros" id="filtrosHall" role="search" aria-label="Filtros do Hall da Fama">
+  <div class="campo"><label for="hAno">Ano letivo</label><select id="hAno" name="ano"></select></div>
+  <div class="campo" style="flex-basis:280px"><label for="hAvaliacao">Avaliação</label><select id="hAvaliacao" name="avaliacao"></select></div>
+</form>
+<div id="hall" aria-live="polite" aria-busy="true"><div class="card"><div class="skeleton" style="min-height:160px"></div></div></div>
+<script type="module" src="/js/hall.js"></script>

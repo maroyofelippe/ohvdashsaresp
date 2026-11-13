@@ -143,6 +143,18 @@ test('importação do legado (sintético) reproduz KPIs e ranking da PoC', async
   ).body;
   conferir(d, poc.kpis(json));
   expect(d.kpis.semGabarito).toEqual(['MT02']);
+  // Hall da Fama (pódio por turma, destaques por série, ranking da escola)
+  const hall = (
+    await admin.get(`/api/hall-da-fama?avaliacao=${rel.avaliacao.id}`).set('Accept', 'application/json')
+  ).body;
+  expect(hall.escola.total).toBe(d.ranking.length);
+  expect(hall.escola.ranking[0].pos).toBe(1);
+  expect(hall.escola.ranking.map((r) => r.p)).toEqual(
+    [...hall.escola.ranking.map((r) => r.p)].sort((x, y) => y - x),
+  );
+  expect(hall.turmas.length).toBeGreaterThan(0);
+  for (const t of hall.turmas) expect(t.podio.every((r) => r.pos <= 3 && r.turma === t.turma)).toBe(true);
+  expect((await admin.get('/hall-da-fama').set('Accept', 'text/html')).status).toBe(200);
   // dados dos radares (eixo × turma × geral)
   expect(d.habilidadesPorTurma).toHaveLength(d.turmas.length);
   for (const t of d.texto) {

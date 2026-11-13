@@ -48,6 +48,7 @@ const MENU = [
     soSemPerm: 'lancamentos:lancar',
   },
   { href: '/painel', rotulo: 'Painel', icone: 'chart', perm: 'painel:ver' },
+  { href: '/hall-da-fama', rotulo: 'Hall da Fama', icone: 'trophy', perm: 'painel:ver' },
   { href: '/avaliacoes', rotulo: 'Avaliações', icone: 'clipboard', perm: 'avaliacoes:ver' },
   { href: '/alunos', rotulo: 'Alunos', icone: 'users', perm: 'alunos:ver' },
   { href: '/turmas', rotulo: 'Turmas', icone: 'grid', perm: 'estrutura:ver' },

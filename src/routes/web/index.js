@@ -36,6 +36,7 @@ router.post('/conta/senha', auth.trocarSenha);
 router.get('/', a(p.inicio));
 router.get('/lancamentos', authorize('lancamentos:ver'), p.lancamentos);
 router.get('/painel', authorize('painel:ver'), p.painel);
+router.get('/hall-da-fama', authorize('painel:ver'), p.hall);
 router.get('/avaliacoes', authorize('avaliacoes:ver'), a(p.avaliacoes));
 router.get('/avaliacoes/nova', authorize('avaliacoes:criar'), a(p.novaAvaliacao));
 router.get('/avaliacoes/:id/editar', authorize('avaliacoes:editar'), a(p.editarAvaliacao));
