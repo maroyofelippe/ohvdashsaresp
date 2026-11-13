@@ -207,7 +207,12 @@ table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric
 .grade td.cel.invalida { animation: tremor .25s; background: var(--c-erro-suave); }
 @keyframes tremor { 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
 .grade td.cel.pendente { color: var(--c-alerta); }
-.grade td.cel.texto { min-width: 64px; font-size: var(--f-12); }
+.grade td.cel.texto { min-width: 38px; }
+.grade td.cel.desab { background: var(--c-superficie-2); }
+/* Cabeçalho em duas linhas quando há produção textual: grupo + colunas S, A1…An, atingimento e % */
+.grade thead th.grupo-texto { height: 26px; padding: 0 var(--e-2); font-family: var(--f-familia); font-size: var(--f-12); border-left: 2px solid var(--c-borda); }
+.grade thead tr.sub th { top: 26px; height: 30px; }
+.grade td.total { text-align: center; }
 .grade td.presenca { width: 40px; cursor: pointer; font-weight: var(--p-forte); }
 .grade td.presenca.ausente { color: var(--c-erro); background: var(--c-erro-suave); }
 .grade tr.ausente td.cel { opacity: .35; }

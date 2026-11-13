@@ -11,7 +11,9 @@ const statusEl = $('#statusSalvo');
 
 let opcoes = null;
 let G = null; // dados da grade
-let cols = []; // colunas navegáveis: { tipo: 'presenca' | 'questao', q }
+let cols = []; // colunas navegáveis: { tipo: 'presenca' | 'questao' | 'texto-sit' | 'texto-asp', q, as }
+let qObj = []; // questões com alternativas/níveis (entram em Acertos e %)
+let qTexto = []; // questões de produção textual (colunas próprias)
 const valores = new Map(); // `${aluno}:${questao}:${aspecto|0}` → valor
 const presencas = new Map(); // aluno → 'presente' | 'ausente'
 const pendentes = new Map(); // chave → item
@@ -155,7 +157,17 @@ async function carregar() {
   presencas.clear();
   for (const r of G.respostas) valores.set(k(r.aluno_id, r.questao_id, r.aspecto_id), r.valor);
   for (const pr of G.presencas) presencas.set(pr.aluno_id, pr.presenca);
-  cols = [{ tipo: 'presenca' }, ...G.questoes.map((q) => ({ tipo: 'questao', q }))];
+  // Ordem: P/F · questões (01…16) · Acertos · % · produção textual (S, A1…A7 · atingimento · %)
+  qObj = G.questoes.filter((q) => q.tipo !== 'producao_texto');
+  qTexto = G.questoes.filter((q) => q.tipo === 'producao_texto');
+  cols = [
+    { tipo: 'presenca' },
+    ...qObj.map((q) => ({ tipo: 'questao', q })),
+    ...qTexto.flatMap((q) => [
+      { tipo: 'texto-sit', q },
+      ...q.aspectos.map((as) => ({ tipo: 'texto-asp', q, as })),
+    ]),
+  ];
   $('#gradeTitulo').textContent =
     `${G.turma.nome} · ${G.alunos.length} alunos · ${G.questoes.length} questões`;
   $('#cadeado').hidden = G.podeEditar;
@@ -176,31 +188,77 @@ async function carregar() {
   focar(0, G.podeEditar ? 1 : 1);
 }
 
-function cabecalho(q) {
+function cabecalho(q, rowspan = 1) {
   const tit =
     q.tipo === 'objetiva'
       ? `Gabarito: ${q.gabarito || '—'}`
       : q.tipo === 'escalar'
         ? 'Escalar'
         : 'Produção de texto';
-  return `<th scope="col" title="${esc(`${q.codigo} · ${tit}${q.habilidade_bncc ? ` · ${q.habilidade_bncc}` : ''}`)}">${esc(q.codigo.replace(/^[A-Z]+/, ''))}<small>${q.tipo === 'objetiva' ? (q.anulada ? '∅' : esc(q.gabarito || '·')) : q.tipo === 'escalar' ? 'esc' : 'texto'}</small></th>`;
+  return `<th scope="col" ${rowspan > 1 ? `rowspan="${rowspan}"` : ''} title="${esc(`${q.codigo} · ${tit}${q.habilidade_bncc ? ` · ${q.habilidade_bncc}` : ''}`)}">${esc(q.codigo.replace(/^[A-Z]+/, ''))}<small>${q.tipo === 'objetiva' ? (q.anulada ? '∅' : esc(q.gabarito || '·')) : q.tipo === 'escalar' ? 'esc' : 'texto'}</small></th>`;
 }
+
+const numQ = (q) => q.codigo.replace(/^[A-Z]+/, '');
+const celVazia = (l, i, extra = '') =>
+  `<td class="cel ${extra}" data-l="${l}" data-c="${i}" tabindex="-1" role="gridcell"></td>`;
 
 function render() {
   const g = $('#grade');
-  const thead = `<thead><tr><th class="fixa" scope="col">Nº · Aluno</th><th scope="col" title="Presença">P/F</th>${G.questoes.map(cabecalho).join('')}<th scope="col">Acertos</th><th scope="col">%</th></tr></thead>`;
+  const rs = qTexto.length ? 2 : 1;
+  const th = (txt, extra = '') => `<th scope="col" ${rs > 1 ? 'rowspan="2"' : ''} ${extra}>${txt}</th>`;
+  const linha1 = `<th class="fixa" scope="col" ${rs > 1 ? 'rowspan="2"' : ''}>Nº · Aluno</th>${th('P/F', 'title="Presença"')}${cols
+    .filter((c) => c.tipo === 'questao')
+    .map((c) => cabecalho(c.q, rs))
+    .join(
+      '',
+    )}${th('Acertos', 'title="Acertos nas questões de alternativas"')}${th('%', 'title="Percentual nas questões de alternativas"')}${qTexto
+    .map(
+      (q) =>
+        `<th scope="colgroup" class="grupo-texto" colspan="${q.aspectos.length + 3}" title="${esc(q.codigo)} · Produção textual">Produção textual${qTexto.length > 1 ? ` · ${esc(q.codigo)}` : ''}</th>`,
+    )
+    .join('')}`;
+  const linha2 = qTexto.length
+    ? `<tr class="sub">${qTexto
+        .map(
+          (q) =>
+            `<th scope="col" title="${esc(`${q.codigo} · situação do texto: ${q.situacoes.map((x) => `${x.codigo} ${x.nome}`).join(', ')}`)}">${esc(numQ(q))}S</th>${q.aspectos
+              .map(
+                (as) => `<th scope="col" title="${esc(`${as.codigo} · ${as.nome}`)}">${esc(as.codigo)}</th>`,
+              )
+              .join(
+                '',
+              )}<th scope="col" title="Quantos critérios pontuaram">Atingimento</th><th scope="col" title="Percentual da produção textual">%</th>`,
+        )
+        .join('')}</tr>`
+    : '';
+  const thead = `<thead><tr>${linha1}</tr>${linha2}</thead>`;
+  const indice = (c) => cols.indexOf(c);
   const linhas = G.alunos
     .map((a, l) => {
       const aus = presencas.get(a.id) === 'ausente';
       return `<tr data-l="${l}" class="${aus ? 'ausente' : ''}"><th class="fixa" scope="row" title="${esc(a.nome)}"><span class="num">${a.numero_chamada}</span><span class="nome-aluno">${esc(a.nome)}</span>${a.situacao !== 'ativo' ? ` <span class="tag aviso">${esc(a.situacao)}</span>` : ''}</th>
       <td class="cel presenca ${aus ? 'ausente' : ''}" data-l="${l}" data-c="0" tabindex="-1" role="gridcell" aria-label="Presença de ${esc(a.nome)}">${aus ? 'F' : presencas.get(a.id) === 'presente' ? 'P' : ''}</td>
-      ${G.questoes.map((q, i) => `<td class="cel ${q.tipo === 'producao_texto' ? 'texto' : ''}" data-l="${l}" data-c="${i + 1}" tabindex="-1" role="gridcell"></td>`).join('')}
-      <td class="total" data-tot="acertos"></td><td class="total" data-tot="pct"></td></tr>`;
+      ${cols
+        .filter((c) => c.tipo === 'questao')
+        .map((c) => celVazia(l, indice(c)))
+        .join('')}
+      <td class="total" data-tot="acertos"></td><td class="total" data-tot="pct"></td>
+      ${qTexto
+        .map(
+          (q) =>
+            `${cols
+              .filter((c) => c.q === q)
+              .map((c) => celVazia(l, indice(c), 'texto'))
+              .join(
+                '',
+              )}<td class="total" data-tot="att${q.id}"></td><td class="total" data-tot="ptx${q.id}"></td>`,
+        )
+        .join('')}</tr>`;
     })
     .join('');
   g.innerHTML = `${thead}<tbody>${linhas}</tbody>`;
   G.alunos.forEach((_, l) => {
-    G.questoes.forEach((_q, i) => pintar(l, i + 1));
+    cols.forEach((_c, i) => i > 0 && pintar(l, i));
     totais(l);
   });
 }
@@ -233,48 +291,72 @@ function texto(q, alunoId) {
   const algum = asp.some((x) => x.v);
   if (!sit && algum) sit = q.situacoes.find((s) => !s.zera_nota)?.codigo;
   const max = q.aspectos.reduce((s, a) => s + Math.max(0, ...a.niveis.map((n) => n.pontos)), 0);
-  if (!sit) return { vazio: true, f: 0, pts: 0, max, sit: null, preenchidos: 0 };
+  if (!sit) return { vazio: true, f: 0, pts: 0, max, sit: null, preenchidos: 0, pontuaram: 0 };
   const def = q.situacoes.find((s) => s.codigo === sit);
-  if (!def || def.zera_nota) return { f: 0, pts: 0, max, sit, zera: true, preenchidos: 0 };
+  if (!def || def.zera_nota) return { f: 0, pts: 0, max, sit, zera: true, preenchidos: 0, pontuaram: 0 };
   let pts = 0;
   let preenchidos = 0;
+  let pontuaram = 0;
   for (const { a, v } of asp) {
     const n = a.niveis.find((x) => x.codigo === v);
     if (n) {
       pts += n.pontos;
       preenchidos++;
+      if (n.pontos > 0) pontuaram++;
     }
   }
-  return { f: max ? pts / max : 0, pts, max, sit, preenchidos };
+  return { f: max ? pts / max : 0, pts, max, sit, preenchidos, pontuaram };
 }
 
 function pintar(l, c) {
   const el = celula(l, c);
   if (!el) return;
-  const q = cols[c].q;
+  const col = cols[c];
+  const q = col.q;
   const a = alunoDaLinha(l);
   let txt = '';
-  if (q.tipo === 'producao_texto') {
+  let f = null;
+  if (col.tipo === 'texto-sit') {
+    txt = valores.get(k(a.id, q.id)) || '';
     const r = texto(q, a.id);
-    txt = r.vazio ? '' : r.zera ? r.sit : `${r.sit}·${r.pts}${r.preenchidos < q.aspectos.length ? '…' : ''}`;
-  } else txt = valores.get(k(a.id, q.id)) || '';
+    f = txt ? (r.zera ? 0 : 1) : null;
+  } else if (col.tipo === 'texto-asp') {
+    const r = texto(q, a.id);
+    const v = valores.get(k(a.id, q.id, col.as.id));
+    const n = col.as.niveis.find((x) => x.codigo === v);
+    txt = v || '';
+    const max = Math.max(0, ...col.as.niveis.map((x) => x.pontos));
+    f = n && !r.zera ? (max ? n.pontos / max : 0) : null;
+    el.classList.toggle('desab', !!r.zera);
+  } else {
+    txt = valores.get(k(a.id, q.id)) || '';
+    f = fracao(q, a.id);
+  }
   el.textContent = txt;
-  const f = fracao(q, a.id);
   el.classList.remove('acerto', 'erro', 'parcial');
   if (f !== null && txt) el.classList.add(f >= 1 ? 'acerto' : f > 0 ? 'parcial' : 'erro');
-  el.setAttribute('aria-label', `${a.nome}, ${q.codigo}: ${txt || 'vazio'}`);
-  const pend = [...pendentes.keys()].some((x) => x.startsWith(`${a.id}:${q.id}:`));
-  el.classList.toggle('pendente', pend);
+  el.setAttribute(
+    'aria-label',
+    `${a.nome}, ${q.codigo}${col.as ? col.as.codigo : col.tipo === 'texto-sit' ? 'S' : ''}: ${txt || 'vazio'}`,
+  );
+  el.classList.toggle('pendente', pendentes.has(k(a.id, q.id, col.as?.id)));
+}
+
+/** Repinta todas as colunas de uma questão (a produção textual ocupa várias). */
+function pintarQuestao(l, q) {
+  cols.forEach((c, i) => c.q === q && pintar(l, i));
 }
 
 function totais(l) {
   const a = alunoDaLinha(l);
   const tr = $(`#grade tr[data-l="${l}"]`);
+  const aus = presencas.get(a.id) === 'ausente';
+  // Acertos e %: somente questões de alternativas (a produção textual tem totais próprios)
   let ac = 0;
   let tot = 0;
   let acertos = 0;
   let algum = false;
-  for (const q of G.questoes) {
+  for (const q of qObj) {
     const ativa = q.anulada || (q.tipo === 'objetiva' ? !!q.gabarito : true);
     if (!ativa) continue;
     const f = fracao(q, a.id);
@@ -283,9 +365,17 @@ function totais(l) {
     ac += (f || 0) * q.peso;
     if (f !== null && f >= 1) acertos++;
   }
-  const aus = presencas.get(a.id) === 'ausente';
-  $('[data-tot=acertos]', tr).textContent = aus ? '—' : algum ? `${acertos}/${G.questoes.length}` : '';
+  $('[data-tot=acertos]', tr).textContent = aus ? '—' : algum ? `${acertos}/${qObj.length}` : '';
   $('[data-tot=pct]', tr).textContent = aus ? 'F' : algum && tot ? pct(ac / tot) : '';
+  for (const q of qTexto) {
+    const r = texto(q, a.id);
+    $(`[data-tot="att${q.id}"]`, tr).textContent = aus
+      ? '—'
+      : r.vazio
+        ? ''
+        : `${r.pontuaram}/${q.aspectos.length}`;
+    $(`[data-tot="ptx${q.id}"]`, tr).textContent = aus ? 'F' : r.vazio ? '' : pct(r.f);
+  }
 }
 
 // ---------------- Navegação ----------------
@@ -318,7 +408,7 @@ grade.parentElement.addEventListener('click', (e) => {
   focar(Number(td.dataset.l), Number(td.dataset.c));
   const col = cols[ativa.c];
   if (col.tipo === 'presenca' && G.podeEditar) return alternarPresenca(ativa.l);
-  if (col.tipo === 'questao' && col.q.tipo !== 'objetiva') abrirPopover();
+  if (col.tipo === 'questao' && col.q.tipo === 'escalar') abrirPopover();
 });
 
 grade.parentElement.addEventListener('keydown', (e) => {
@@ -340,17 +430,17 @@ grade.parentElement.addEventListener('keydown', (e) => {
   if (tecla === 'End') return focar(ativa.l, cols.length - 1);
   if (tecla === 'Enter') {
     e.preventDefault();
-    if (col.tipo === 'questao' && col.q.tipo !== 'objetiva') return abrirPopover();
+    if (col.tipo === 'questao' && col.q.tipo === 'escalar') return abrirPopover();
     return focar(ativa.l + 1, ativa.c);
   }
   if (!G.podeEditar) return;
   if (tecla === 'Backspace' || tecla === 'Delete') {
     e.preventDefault();
     if (col.tipo === 'presenca') return definirPresenca(ativa.l, null);
-    if (col.q.tipo === 'producao_texto') {
+    if (col.tipo === 'texto-sit') {
       definir(ativa.l, col.q, null, null);
       col.q.aspectos.forEach((a) => definir(ativa.l, col.q, a.id, null));
-    } else definir(ativa.l, col.q, null, null);
+    } else definir(ativa.l, col.q, col.as?.id ?? null, null);
     return;
   }
   if (tecla.length !== 1) return;
@@ -368,7 +458,24 @@ grade.parentElement.addEventListener('keydown', (e) => {
     toast('Aluno marcado como ausente (F). Marque P para lançar respostas.', '');
     return recusar();
   }
-  if (q.tipo === 'producao_texto') return abrirPopover(v);
+  if (col.tipo === 'texto-sit') {
+    const def = q.situacoes.find((x) => x.codigo === v);
+    if (!def) return recusar();
+    definir(ativa.l, q, null, v);
+    if (def.zera_nota) q.aspectos.forEach((as) => definir(ativa.l, q, as.id, null));
+    return avancar();
+  }
+  if (col.tipo === 'texto-asp') {
+    if (!col.as.niveis.some((n) => n.codigo === v)) return recusar();
+    const atual = valores.get(k(alunoDaLinha(ativa.l).id, q.id));
+    if (atual && q.situacoes.find((x) => x.codigo === atual)?.zera_nota) {
+      toast('A situação do texto zera a nota. Altere a situação (S) para lançar os critérios.', '');
+      return recusar();
+    }
+    if (!atual) definir(ativa.l, q, null, q.situacoes.find((x) => !x.zera_nota)?.codigo || 'A');
+    definir(ativa.l, q, col.as.id, v);
+    return avancar();
+  }
   const validos =
     q.tipo === 'objetiva'
       ? [...'ABCDEFGHIJ'.slice(0, q.num_alternativas), '-', 'X']
@@ -400,10 +507,7 @@ function definir(l, q, aspectoId, valor) {
     if (pc) pc.textContent = 'P';
   }
   pendentes.set(chave, { aluno_id: a.id, questao_id: q.id, aspecto_id: aspectoId || null, valor });
-  pintar(
-    l,
-    cols.findIndex((c) => c.q === q),
-  );
+  pintarQuestao(l, q);
   totais(l);
   agendar();
 }
@@ -470,8 +574,8 @@ async function salvarAgora() {
     for (const ch of chaves) {
       const [aid, qid] = ch.split(':').map(Number);
       const l = G.alunos.findIndex((x) => x.id === aid);
-      const c = cols.findIndex((x) => x.q && x.q.id === qid);
-      if (l >= 0 && c >= 0) pintar(l, c);
+      const qq = G.questoes.find((x) => x.id === qid);
+      if (l >= 0 && qq) pintarQuestao(l, qq);
     }
   } catch (e) {
     // devolve à fila (sem sobrescrever edições mais novas)
@@ -521,9 +625,9 @@ function foraDoPopover(e) {
   if (!pop.contains(e.target) && !e.target.closest('td.cel')) fecharPopover();
 }
 
-function abrirPopover(teclaInicial) {
+function abrirPopover() {
   const col = cols[ativa.c];
-  if (!col || col.tipo !== 'questao' || col.q.tipo === 'objetiva') return;
+  if (!col || col.tipo !== 'questao' || col.q.tipo !== 'escalar') return;
   const q = col.q;
   const a = alunoDaLinha(ativa.l);
   const ro = !G.podeEditar;
@@ -552,96 +656,13 @@ function abrirPopover(teclaInicial) {
     setTimeout(() => document.addEventListener('mousedown', foraDoPopover), 0);
     return;
   }
-  // Produção de texto: situação + aspectos
-  let foco = 0; // 0 = situação; 1..n = aspectos
-  const desenhar = () => {
-    const r = texto(q, a.id);
-    const sit = valores.get(k(a.id, q.id)) || (r.sit && !r.vazio ? r.sit : '');
-    const zera = q.situacoes.find((s) => s.codigo === sit)?.zera_nota;
-    pop.className = 'popover painel-texto';
-    pop.innerHTML = `<h4>${esc(q.codigo)} · ${esc(a.nome)} <span class="muted">· ${r.vazio ? '—' : zera ? '0' : `${r.pts}/${r.max}`} pts</span></h4>
-      <div class="asp ${foco === 0 ? 'foco' : ''}" data-linha="0"><span><b>Situação</b></span><div class="btn-grupo">${q.situacoes.map((s) => `<button type="button" class="btn btn-letra" title="${esc(s.nome)}${s.zera_nota ? ' (zera)' : ''}" data-sit="${esc(s.codigo)}" aria-pressed="${sit === s.codigo}" ${ro ? 'disabled' : ''}>${esc(s.codigo)}</button>`).join('')}</div></div>
-      <div class="small muted" style="margin:2px 0 6px">${q.situacoes.map((s) => `${esc(s.codigo)} ${esc(s.nome)}`).join(' · ')}</div>
-      ${q.aspectos
-        .map((as, i) => {
-          const v = valores.get(k(a.id, q.id, as.id));
-          return `<div class="asp ${foco === i + 1 ? 'foco' : ''} ${zera ? 'desab' : ''}" data-linha="${i + 1}"><span title="${esc(as.descricao || '')}"><b>${esc(as.codigo)}</b> ${esc(as.nome)}</span><div class="btn-grupo">${as.niveis.map((n) => `<button type="button" class="btn btn-letra" data-asp="${as.id}" data-v="${esc(n.codigo)}" title="${esc(`${n.pontos} pt – ${n.descricao || ''}`)}" aria-pressed="${v === n.codigo}" ${ro || zera ? 'disabled' : ''}>${esc(n.codigo)}</button>`).join('')}</div></div>`;
-        })
-        .join('')}
-      <p class="small muted" style="margin:8px 0 0">Digite as letras em sequência (situação, depois A1…${esc(q.aspectos.at(-1)?.codigo || '')}). ↑↓ muda a linha · Esc fecha.</p>`;
-    $$('[data-sit]', pop).forEach((b) =>
-      b.addEventListener('click', () => {
-        escolherSit(b.dataset.sit);
-      }),
-    );
-    $$('[data-asp]', pop).forEach((b) =>
-      b.addEventListener('click', () => {
-        foco = q.aspectos.findIndex((x) => String(x.id) === b.dataset.asp) + 1;
-        escolherAsp(b.dataset.v);
-      }),
-    );
-  };
-  const escolherSit = (v) => {
-    definir(ativa.l, q, null, v);
-    const def = q.situacoes.find((s) => s.codigo === v);
-    if (def?.zera_nota) {
-      q.aspectos.forEach((as) => definir(ativa.l, q, as.id, null));
-      return fecharPopover(true);
-    }
-    foco = 1;
-    desenhar();
-    pop.focus();
-  };
-  const escolherAsp = (v) => {
-    const as = q.aspectos[foco - 1];
-    if (!as) return;
-    if (!valores.get(k(a.id, q.id)))
-      definir(ativa.l, q, null, q.situacoes.find((s) => !s.zera_nota)?.codigo || 'A');
-    definir(ativa.l, q, as.id, v);
-    if (foco >= q.aspectos.length) return fecharPopover(true);
-    foco++;
-    desenhar();
-    pop.focus();
-  };
-  desenhar();
-  pop.tabIndex = -1;
-  pop.hidden = false;
-  posicionar(celula(ativa.l, ativa.c));
-  pop.focus();
-  pop.onkeydown = (e) => {
-    if (e.key === 'Escape' || (e.key === 'Enter' && e.target === pop)) {
-      e.preventDefault();
-      return fecharPopover(e.key === 'Enter');
-    }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      foco = Math.max(0, Math.min(q.aspectos.length, foco + (e.key === 'ArrowDown' ? 1 : -1)));
-      desenhar();
-      return pop.focus();
-    }
-    if (ro || e.key.length !== 1) return;
-    const v = e.key.toUpperCase();
-    if (foco === 0 && q.situacoes.some((s) => s.codigo === v)) {
-      e.preventDefault();
-      return escolherSit(v);
-    }
-    const as = q.aspectos[foco - 1];
-    if (as && as.niveis.some((n) => n.codigo === v)) {
-      e.preventDefault();
-      return escolherAsp(v);
-    }
-  };
-  setTimeout(() => document.addEventListener('mousedown', foraDoPopover), 0);
-  if (teclaInicial && !ro) {
-    if (q.situacoes.some((s) => s.codigo === teclaInicial)) escolherSit(teclaInicial);
-  }
 }
 
 // ---------------- Ajuda, modelo, exportação e importação ----------------
 $('#btnAjuda').addEventListener('click', () =>
   modal({
     titulo: 'Atalhos da grade',
-    html: `<ul class="lista-insights"><li><b>Letra</b> (A, B, C…): grava e avança para a próxima célula</li><li><b>-</b> em branco · <b>X</b> rasura/dupla marcação</li><li><b>Setas</b>, <b>Tab</b> e <b>Shift+Tab</b>: navegar · <b>Home/End</b>: início/fim da linha</li><li><b>Enter</b>: abre os níveis (questões escalares e produção de texto)</li><li><b>Backspace/Delete</b>: limpa a célula</li><li>Coluna <b>P/F</b>: P presente, F ausente (ausentes ficam fora das médias)</li><li>O salvamento é automático; acompanhe o indicador “Salvo às…”.</li></ul>`,
+    html: `<ul class="lista-insights"><li><b>Letra</b> (A, B, C…): grava e avança para a próxima célula</li><li><b>-</b> em branco · <b>X</b> rasura/dupla marcação</li><li><b>Setas</b>, <b>Tab</b> e <b>Shift+Tab</b>: navegar · <b>Home/End</b>: início/fim da linha</li><li><b>Enter</b>: abre os níveis das questões escalares</li><li><b>Produção textual</b>: digite a situação na coluna S e as letras dos critérios (A1…A7) nas colunas seguintes</li><li><b>Backspace/Delete</b>: limpa a célula</li><li>Coluna <b>P/F</b>: P presente, F ausente (ausentes ficam fora das médias)</li><li>O salvamento é automático; acompanhe o indicador “Salvo às…”.</li></ul>`,
   }),
 );
 $('#btnModelo').addEventListener('click', () =>
