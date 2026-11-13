@@ -192,6 +192,8 @@ $('#btnExportarTudo').addEventListener(
 // ---------------- Renderização ----------------
 const exp = (visao) =>
   `<span class="card-acoes nao-imprimir"><button class="btn btn-sm btn-ghost" data-exp="${visao}" data-fmt="xlsx" title="Exportar xlsx">xlsx</button><button class="btn btn-sm btn-ghost" data-exp="${visao}" data-fmt="csv" title="Exportar csv">csv</button></span>`;
+// Seções ocultadas a pedido (basta trocar para true para exibir de novo).
+const MOSTRAR = { rankingRespostas: false, radarTexto: false };
 const tagPct = (p) => `<span class="tag ${classePct(p)}">${pct(p)}</span>`;
 
 function render() {
@@ -217,16 +219,49 @@ function render() {
     </div>
     ${d.aluno ? cardAluno(d) : ''}
     <div class="painel-grid">
+      ${
+        MOSTRAR.rankingRespostas
+          ? discs
+              .map((di) => {
+                const n = d.questoes.filter(
+                  (q) => q.disciplina === di.sigla && q.tipo === 'objetiva' && q.part > 0,
+                ).length;
+                return n
+                  ? `<div class="card largo"><h2>Ranking de respostas por questão — ${esc(di.nome)} ${exp('questoes')}</h2><p class="card-sub">Distribuição das alternativas marcadas; o gabarito aparece em verde. Distratores mais marcados que o gabarito merecem atenção.</p><div class="grafico" style="height:390px"><canvas id="gResp_${di.sigla}" role="img" aria-label="Distribuição das respostas por questão de ${esc(di.nome)}"></canvas></div></div>`
+                  : '';
+              })
+              .join('')
+          : ''
+      }
+      <div class="card largo"><h2>Desempenho por habilidade ${exp('habilidades')}</h2><p class="card-sub">% de acerto (ponderado pelo peso) nas questões de cada habilidade BNCC, por turma.</p>${quadrosHabilidades(d)}</div>
       ${discs
-        .map((di) => {
-          const n = d.questoes.filter(
-            (q) => q.disciplina === di.sigla && q.tipo === 'objetiva' && q.part > 0,
-          ).length;
-          return n
-            ? `<div class="card largo"><h2>Ranking de respostas por questão — ${esc(di.nome)} ${exp('questoes')}</h2><p class="card-sub">Distribuição das alternativas marcadas; o gabarito aparece em verde. Distratores mais marcados que o gabarito merecem atenção.</p><div class="grafico" style="height:390px"><canvas id="gResp_${di.sigla}" role="img" aria-label="Distribuição das respostas por questão de ${esc(di.nome)}"></canvas></div></div>`
-            : '';
-        })
+        .filter((di) => radarHabilidades(di.sigla).eixos.length)
+        .map(
+          (di) =>
+            `<div class="card"><h2>Radar de habilidades — ${esc(di.nome)} ${exp('habilidades')}</h2><p class="card-sub">% de acerto em cada habilidade BNCC: cada turma comparada com o geral (todas as turmas do filtro).</p><div class="grafico grafico-radar"><canvas id="gRadHab_${di.sigla}" role="img" aria-label="Radar de habilidades de ${esc(di.nome)}: turmas e geral"></canvas></div></div>`,
+        )
         .join('')}
+      ${d.texto
+        .map(
+          (
+            t,
+            i,
+          ) => `<div class="card"><h2>Produção de texto — ${esc(t.codigo)} ${exp('texto')}</h2><p class="card-sub">Média de ${num(t.mediaPontos)} de ${num(t.max)} pontos (${pct(t.p)}). Aproveitamento por aspecto nos textos em situação que pontua.</p>
+        <p>${t.situacoes.map((s) => `<span class="tag ${s.zera_nota ? (s.n ? 'erro' : '') : 'ok'}">${esc(s.codigo)} ${esc(s.nome)}: ${s.n}</span>`).join(' ')}</p>
+        <div class="grafico"><canvas id="gTexto_${i}" role="img" aria-label="Aproveitamento por aspecto"></canvas></div></div>${
+          MOSTRAR.radarTexto
+            ? `
+      <div class="card"><h2>Radar da produção de texto — ${esc(t.codigo)} ${exp('texto')}</h2><p class="card-sub">Aproveitamento por critério: cada turma comparada com o geral.</p><div class="grafico grafico-radar"><canvas id="gRadTexto_${i}" role="img" aria-label="Radar dos critérios de produção de texto: turmas e geral"></canvas></div></div>`
+            : ''
+        }`,
+        )
+        .join('')}
+      ${
+        d.escalares.some((e) => e.part)
+          ? `<div class="card"><h2>Questões escalares ${exp('escalares')}</h2><p class="card-sub">Distribuição dos níveis de crédito (integral, parcial, nenhum).</p><div class="grafico" style="height:${Math.max(200, d.escalares.length * 70)}px"><canvas id="gEsc" role="img" aria-label="Distribuição das questões escalares"></canvas></div>
+        <div class="small muted">${d.escalares.map((e) => `<div><b>${esc(e.codigo)}</b> (${esc(e.habilidade || '')}): ${e.niveis.map((n) => `${esc(n.codigo)}=${n.n}`).join(' · ')}${e.semResposta ? ` · sem resposta ${e.semResposta}` : ''}</div>`).join('')}</div></div>`
+          : ''
+      }
       <div class="card"><h2>Maiores acertos ${exp('questoes')}</h2>${tabelaQuestoes(d.maiores)}</div>
       <div class="card"><h2>Menores acertos ${exp('questoes')}</h2>${tabelaQuestoes(d.menores)}</div>
       <div class="card largo"><h2>Ranking dos alunos ${exp('ranking')}</h2>
@@ -244,31 +279,6 @@ function render() {
                 )}<td data-rotulo="Pontos" data-valor="${r.ac}">${num(r.ac)}/${num(r.tot)}</td><td data-rotulo="Geral" data-valor="${r.p}">${tagPct(r.p)}</td></tr>`,
           )
           .join('')}</tbody></table></div></div>
-      <div class="card largo"><h2>Desempenho por habilidade ${exp('habilidades')}</h2><p class="card-sub">% de acerto (ponderado pelo peso) nas questões de cada habilidade BNCC, por turma.</p>${quadrosHabilidades(d)}<div class="grafico" style="height:${Math.max(300, d.habilidades.filter((h) => h.n > 0).length * (20 + 8 * d.porTurma.filter((t) => t.avaliados).length))}px"><canvas id="gHab" role="img" aria-label="Desempenho por habilidade"></canvas></div></div>
-      ${discs
-        .filter((di) => radarHabilidades(di.sigla).eixos.length)
-        .map(
-          (di) =>
-            `<div class="card"><h2>Radar de habilidades — ${esc(di.nome)} ${exp('habilidades')}</h2><p class="card-sub">% de acerto em cada habilidade BNCC: cada turma comparada com o geral (todas as turmas do filtro).</p><div class="grafico grafico-radar"><canvas id="gRadHab_${di.sigla}" role="img" aria-label="Radar de habilidades de ${esc(di.nome)}: turmas e geral"></canvas></div></div>`,
-        )
-        .join('')}
-      ${d.texto
-        .map(
-          (
-            t,
-            i,
-          ) => `<div class="card"><h2>Produção de texto — ${esc(t.codigo)} ${exp('texto')}</h2><p class="card-sub">Média de ${num(t.mediaPontos)} de ${num(t.max)} pontos (${pct(t.p)}). Aproveitamento por aspecto nos textos em situação que pontua.</p>
-        <p>${t.situacoes.map((s) => `<span class="tag ${s.zera_nota ? (s.n ? 'erro' : '') : 'ok'}">${esc(s.codigo)} ${esc(s.nome)}: ${s.n}</span>`).join(' ')}</p>
-        <div class="grafico"><canvas id="gTexto_${i}" role="img" aria-label="Aproveitamento por aspecto"></canvas></div></div>
-      <div class="card"><h2>Radar da produção de texto — ${esc(t.codigo)} ${exp('texto')}</h2><p class="card-sub">Aproveitamento por critério: cada turma comparada com o geral.</p><div class="grafico grafico-radar"><canvas id="gRadTexto_${i}" role="img" aria-label="Radar dos critérios de produção de texto: turmas e geral"></canvas></div></div>`,
-        )
-        .join('')}
-      ${
-        d.escalares.some((e) => e.part)
-          ? `<div class="card"><h2>Questões escalares ${exp('escalares')}</h2><p class="card-sub">Distribuição dos níveis de crédito (integral, parcial, nenhum).</p><div class="grafico" style="height:${Math.max(200, d.escalares.length * 70)}px"><canvas id="gEsc" role="img" aria-label="Distribuição das questões escalares"></canvas></div>
-        <div class="small muted">${d.escalares.map((e) => `<div><b>${esc(e.codigo)}</b> (${esc(e.habilidade || '')}): ${e.niveis.map((n) => `${esc(n.codigo)}=${n.n}`).join(' · ')}${e.semResposta ? ` · sem resposta ${e.semResposta}` : ''}</div>`).join('')}</div></div>`
-          : ''
-      }
       <div class="card largo"><h2>Comparativo entre turmas ${exp('comparativo')}</h2><div class="grafico"><canvas id="gComp" role="img" aria-label="Comparativo entre turmas"></canvas></div>
         <div class="tabela-wrap" style="margin-top:12px"><table class="tabela cartoes"><thead><tr><th>Turma</th><th>Avaliados</th><th>Ausentes</th><th>Média</th>${discs.map((x) => `<th>${esc(x.sigla)}</th>`).join('')}<th>≥ 70%</th></tr></thead><tbody>
         ${d.porTurma.map((t) => `<tr><td data-rotulo="Turma"><b>${esc(t.turma)}</b></td><td data-rotulo="Avaliados">${t.avaliados}/${t.alunos}</td><td data-rotulo="Ausentes">${t.ausentes}</td><td data-rotulo="Média">${tagPct(t.media)}</td>${t.porDisciplina.map((x) => `<td data-rotulo="${esc(x.sigla)}">${pct(x.media)}</td>`).join('')}<td data-rotulo="≥ 70%">${t.acima70}</td></tr>`).join('')}
@@ -282,7 +292,7 @@ function render() {
           <div class="insight rec"><b>Sugestões</b><ul class="lista-insights">${t.insights.recomendacoes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div></div>`,
           )
           .join('')}</div></div>
-      <div class="card largo"><h2>Mapa de calor — aluno × questão ${exp('mapa')}</h2><p class="card-sub">Verde com ✓ = acerto; vermelho com ✗ = erro; amarelo = crédito parcial (% da questão). F = ausente na disciplina. Passe o mouse para ver os detalhes.</p>${mapaCalor(d)}</div>
+      <div class="card largo"><h2>Mapa de calor — aluno × questão ${exp('mapa')}</h2><p class="card-sub">LP 1–16 e MT 1–21, por turma, em ordem alfabética. Verde com ✓ = acerto; vermelho com ✗ = erro; amarelo = crédito parcial (% da questão). F = ausente na disciplina. Passe o mouse para ver os detalhes.</p>${mapaCalor(d)}</div>
     </div>`;
   tabelasOrdenaveis(raiz);
   $$('[data-exp]', raiz).forEach((b) =>
@@ -293,10 +303,12 @@ function render() {
     ),
   );
   if (!window.Chart) return;
-  discs.forEach((di) => graficoRespostas(di.sigla));
-  graficoHabilidades();
+  if (MOSTRAR.rankingRespostas) discs.forEach((di) => graficoRespostas(di.sigla));
   discs.forEach((di) => graficoRadarHabilidades(di.sigla));
-  d.texto.forEach((t, i) => (graficoTexto(t, i), graficoRadarTexto(t, i)));
+  d.texto.forEach((t, i) => {
+    graficoTexto(t, i);
+    if (MOSTRAR.radarTexto) graficoRadarTexto(t, i);
+  });
   if (d.escalares.some((e) => e.part)) graficoEscalares();
   graficoComparativo();
 }
@@ -359,9 +371,19 @@ const FA_CHECK =
 const FA_XMARK =
   '<svg class="hm-ico" viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg>';
 
+// Limite de questões exibidas no mapa de calor, por disciplina (LP 1–16 e MT 1–21).
+const LIMITE_MAPA = { LP: 16, MT: 21 };
 function mapaCalor(d) {
   const m = d.mapaCalor;
-  // Cores e contraste vêm de classes (.hm-*) que usam os tokens do tema claro/escuro.
+  // índices das questões que entram no mapa (número entre 1 e o limite da disciplina; exclui produção textual)
+  const indices = m.questoes
+    .map((q, i) => ({ q, i }))
+    .filter(({ q }) => {
+      const mt = /^([A-Z]+)0*(\d+)/.exec(q.codigo);
+      const limite = mt && LIMITE_MAPA[mt[1]];
+      return limite && Number(mt[2]) >= 1 && Number(mt[2]) <= limite;
+    });
+  if (!indices.length) return '<p class="muted">Sem questões de LP (1–16) ou MT (1–21) neste filtro.</p>';
   const cel = (v, a, q) => {
     if (v === null) return `<td class="hm hm-f" title="${esc(`${a.nome} · ${q.codigo}: ausente`)}">F</td>`;
     if (v >= 1)
@@ -370,9 +392,19 @@ function mapaCalor(d) {
       return `<td class="hm hm-erro" title="${esc(`${a.nome} · ${q.codigo}: erro`)}">${FA_XMARK}<span class="sr-only">erro</span></td>`;
     return `<td class="hm hm-parc" title="${esc(`${a.nome} · ${q.codigo}: ${pct(v)} (parcial)`)}">${Math.round(v * 100)}</td>`;
   };
-  return `<div class="tabela-wrap" style="max-height:520px"><table class="heatmap"><thead><tr><th class="nome" style="position:sticky;left:0;z-index:2">Aluno</th>${m.questoes.map((q) => `<th title="${esc(q.codigo)}">${esc(q.codigo.replace(/^[A-Z]+/, ''))}<br><span class="muted">${esc(q.disciplina)}</span></th>`).join('')}<th>%</th></tr></thead><tbody>
-    ${m.alunos.map((a) => `<tr><td class="nome">${esc(a.nome)} <span class="muted small">${esc(a.turma.split(' ').pop())}</span></td>${a.valores.map((v, i) => cel(v, a, m.questoes[i])).join('')}<td><b>${pct(a.p)}</b></td></tr>`).join('')}
-  </tbody></table></div>`;
+  const turmas = [...new Set(m.alunos.map((a) => a.turma))].sort((a, b) =>
+    a.localeCompare(b, 'pt-BR', { numeric: true }),
+  );
+  return turmas
+    .map((turma) => {
+      const alunos = m.alunos
+        .filter((a) => a.turma === turma)
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+      return `<section class="mapa-turma" aria-label="Mapa de calor — ${esc(turma)}"><h3>${esc(turma)} <span class="muted small">· ${alunos.length} aluno(s)</span></h3><div class="tabela-wrap" style="max-height:520px"><table class="heatmap"><thead><tr><th class="nome" style="position:sticky;left:0;z-index:2">Aluno</th>${indices.map(({ q }) => `<th title="${esc(q.codigo)}">${esc(q.codigo.replace(/^[A-Z]+/, ''))}<br><span class="muted">${esc(q.disciplina)}</span></th>`).join('')}<th>%</th></tr></thead><tbody>
+    ${alunos.map((a) => `<tr><td class="nome">${esc(a.nome)}</td>${indices.map(({ q, i }) => cel(a.valores[i], a, q)).join('')}<td><b>${pct(a.p)}</b></td></tr>`).join('')}
+  </tbody></table></div></section>`;
+    })
+    .join('');
 }
 
 // Plugin local (sem dependência externa): escreve o valor no topo de cada coluna.
@@ -448,48 +480,6 @@ function graficoRespostas(sigla) {
                 `${c.dataset.label}: ${c.parsed.y}%${qs[c.dataIndex].gabarito === letras[c.datasetIndex] ? ' ✓ gabarito' : ''}`,
               footer: (it) =>
                 `${qs[it[0].dataIndex].part} respondentes · ${qs[it[0].dataIndex].habilidade || ''}`,
-            },
-          },
-        },
-      },
-    }),
-  );
-}
-
-function graficoHabilidades() {
-  const el = document.getElementById('gHab');
-  if (!el) return;
-  const habs = dados.habilidades
-    .filter((h) => h.p !== null && h.n > 0)
-    .sort((a, b) => a.disciplina.localeCompare(b.disciplina) || a.codigo.localeCompare(b.codigo));
-  const datasets = dados.habilidadesPorTurma
-    .map((t, i) => ({ t, i }))
-    .map(({ t, i }) => ({
-      label: t.turma,
-      data: habs.map((h) => {
-        const x = t.habilidades.find((y) => y.codigo === h.codigo);
-        return x && x.p !== null ? Math.round(x.p * 1000) / 10 : null;
-      }),
-      backgroundColor: CAT[i % CAT.length],
-      ...barra,
-      borderSkipped: 'start',
-      maxBarThickness: 16,
-    }))
-    .filter((ds) => ds.data.some((v) => v !== null));
-  graficos.push(
-    new Chart(el, {
-      type: 'bar',
-      data: { labels: habs.map((h) => h.codigo), datasets },
-      options: {
-        indexAxis: 'y',
-        scales: { x: { min: 0, max: 100, ticks: pctTick }, y: { grid: { display: false } } },
-        plugins: {
-          legend: { position: 'bottom', display: datasets.length > 1 },
-          tooltip: {
-            callbacks: {
-              title: (it) => `${habs[it[0].dataIndex].codigo} — ${habs[it[0].dataIndex].descritor || ''}`,
-              label: (c) => `${c.dataset.label}: ${c.parsed.x}%`,
-              footer: (it) => `Questões: ${habs[it[0].dataIndex].questoes.join(', ')}`,
             },
           },
         },
